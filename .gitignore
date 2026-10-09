@@ -1,0 +1,19 @@
+# Build output
+/bin/
+/dist/
+
+# Go test and coverage artifacts
+*.test
+*.out
+coverage.*
+
+# Local environment
+.env
+.env.*
+
+# Editors and OS
+.idea/
+*.swp
+.DS_Store
+
+# sandbox/certs/ is generated and ignored by its own .gitignore

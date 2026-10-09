@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "active": "local",
+  "profiles": {
+    "local": {
+      "description": "sandbox, plaintext",
+      "bootstrap_servers": ["localhost:19101", "localhost:19201", "localhost:19301"],
+      "auth": { "mechanism": "none" },
+      "color": "green"
+    },
+    "local-scram": {
+      "description": "sandbox, SCRAM over TLS",
+      "bootstrap_servers": ["localhost:19104", "localhost:19204", "localhost:19304"],
+      "tls": { "enabled": true, "ca_file": "../../sandbox/certs/ca.crt" },
+      "auth": { "mechanism": "scram-sha-512", "username": "admin", "password": "admin-secret" },
+      "color": "blue"
+    },
+    "prod": {
+      "description": "sandbox pretending to be prod",
+      "bootstrap_servers": ["localhost:19101"],
+      "auth": { "mechanism": "none" },
+      "read_only": true,
+      "color": "red",
+      "labels": ["prod"]
+    }
+  }
+}

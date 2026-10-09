@@ -1,0 +1,130 @@
+# Sandbox cluster for development and tests: see spec/testing.md
+
+name: ntk-sandbox
+
+x-kafka: &kafka
+  image: apache/kafka:4.3.1
+  restart: unless-stopped
+  depends_on:
+    certs:
+      condition: service_completed_successfully
+  healthcheck:
+    test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19090 >/dev/null 2>&1"]
+    interval: 10s
+    timeout: 10s
+    start_period: 30s
+    retries: 10
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: bnRrLXNhbmRib3gtMDAwMQ   # fixed so volumes survive `down`/`up`
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19091,2@kafka-2:19091,3@kafka-3:19091
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  # Listener names deliberately avoid "SSL://" and "SASL_", which trigger the
+  # image's own (file-name based) SSL/SASL setup in /etc/kafka/docker/configure.
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,CLIENT:PLAINTEXT,MTLS:SSL,SASL:SASL_PLAINTEXT,SASLTLS:SASL_SSL
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xms256m -Xmx768m
+
+  KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
+  KAFKA_SUPER_USERS: User:ANONYMOUS;User:admin
+  KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "false"
+
+  KAFKA_SASL_ENABLED_MECHANISMS: PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
+  KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf
+
+  KAFKA_SSL_KEYSTORE_TYPE: PEM
+  KAFKA_SSL_KEY_PASSWORD: broker-secret
+  KAFKA_SSL_TRUSTSTORE_TYPE: PEM
+  KAFKA_SSL_TRUSTSTORE_LOCATION: /certs/ca.crt
+  KAFKA_LISTENER_NAME_MTLS_SSL_CLIENT_AUTH: required
+  KAFKA_SSL_PRINCIPAL_MAPPING_RULES: RULE:^CN=([^,]+)$$/$$1/,DEFAULT
+
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_NUM_PARTITIONS: 3
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+services:
+  certs:
+    image: apache/kafka:4.3.1
+    user: root
+    entrypoint: ["/bin/sh", "/gen-certs.sh"]
+    volumes:
+      - ./sandbox/certs:/certs
+      - ./sandbox/gen-certs.sh:/gen-certs.sh:ro
+
+  kafka-1:
+    <<: *kafka
+    hostname: kafka-1
+    ports: ["127.0.0.1:19101-19104:19101-19104"]
+    volumes:
+      - ./sandbox/certs:/certs:ro
+      - ./sandbox/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf:ro
+      - kafka-1-data:/var/lib/kafka/data
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19101,MTLS://:19102,SASL://:19103,SASLTLS://:19104
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19090,CLIENT://localhost:19101,MTLS://localhost:19102,SASL://localhost:19103,SASLTLS://localhost:19104
+      KAFKA_SSL_KEYSTORE_LOCATION: /certs/kafka-1.keystore.pem
+
+  kafka-2:
+    <<: *kafka
+    hostname: kafka-2
+    ports: ["127.0.0.1:19201-19204:19201-19204"]
+    volumes:
+      - ./sandbox/certs:/certs:ro
+      - ./sandbox/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf:ro
+      - kafka-2-data:/var/lib/kafka/data
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19201,MTLS://:19202,SASL://:19203,SASLTLS://:19204
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19090,CLIENT://localhost:19201,MTLS://localhost:19202,SASL://localhost:19203,SASLTLS://localhost:19204
+      KAFKA_SSL_KEYSTORE_LOCATION: /certs/kafka-2.keystore.pem
+
+  kafka-3:
+    <<: *kafka
+    hostname: kafka-3
+    ports: ["127.0.0.1:19301-19304:19301-19304"]
+    volumes:
+      - ./sandbox/certs:/certs:ro
+      - ./sandbox/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf:ro
+      - kafka-3-data:/var/lib/kafka/data
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19301,MTLS://:19302,SASL://:19303,SASLTLS://:19304
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19090,CLIENT://localhost:19301,MTLS://localhost:19302,SASL://localhost:19303,SASLTLS://localhost:19304
+      KAFKA_SSL_KEYSTORE_LOCATION: /certs/kafka-3.keystore.pem
+
+  init:
+    image: apache/kafka:4.3.1
+    depends_on:
+      kafka-1: { condition: service_healthy }
+      kafka-2: { condition: service_healthy }
+      kafka-3: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        # One mechanism per request: Kafka rejects altering the same user twice in one call.
+        for u in admin:admin-secret bob:bob-secret; do
+          name=$${u%%:*}; pass=$${u#*:}
+          for mech in SCRAM-SHA-256 SCRAM-SHA-512; do
+            /opt/kafka/bin/kafka-configs.sh --bootstrap-server kafka-1:19090 --alter \
+              --entity-type users --entity-name "$$name" \
+              --add-config "$$mech=[password=$$pass]"
+          done
+        done
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:

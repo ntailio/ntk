@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "active": "sandbox",
+  "profiles": {
+    "sandbox": {
+      "description": "Sandbox, plaintext, User:ANONYMOUS (super user)",
+      "bootstrap_servers": ["localhost:19101", "localhost:19201", "localhost:19301"],
+      "auth": { "mechanism": "none" },
+      "color": "green",
+      "labels": ["sandbox"]
+    },
+    "sandbox-mtls": {
+      "description": "Sandbox, mTLS as User:admin (super user)",
+      "bootstrap_servers": ["localhost:19102", "localhost:19202", "localhost:19302"],
+      "tls": { "ca_file": "certs/ca.crt", "cert_file": "certs/admin.crt", "key_file": "certs/admin.key" },
+      "auth": { "mechanism": "none" },
+      "color": "green",
+      "labels": ["sandbox"]
+    },
+    "sandbox-mtls-bob": {
+      "description": "Sandbox, mTLS as User:bob (no ACLs by default)",
+      "bootstrap_servers": ["localhost:19102", "localhost:19202", "localhost:19302"],
+      "tls": { "ca_file": "certs/ca.crt", "cert_file": "certs/bob.crt", "key_file": "certs/bob.key" },
+      "auth": { "mechanism": "none" },
+      "color": "yellow",
+      "labels": ["sandbox"]
+    },
+    "sandbox-plain": {
+      "description": "Sandbox, SASL_PLAINTEXT PLAIN as User:admin",
+      "bootstrap_servers": ["localhost:19103", "localhost:19203", "localhost:19303"],
+      "auth": { "mechanism": "plain", "username": "admin", "password": "admin-secret" },
+      "color": "green",
+      "labels": ["sandbox"]
+    },
+    "sandbox-scram": {
+      "description": "Sandbox, SASL_SSL SCRAM-SHA-512 as User:admin",
+      "bootstrap_servers": ["localhost:19104", "localhost:19204", "localhost:19304"],
+      "tls": { "ca_file": "certs/ca.crt" },
+      "auth": { "mechanism": "scram-sha-512", "username": "admin", "password": "admin-secret" },
+      "color": "green",
+      "labels": ["sandbox"]
+    },
+    "sandbox-bob": {
+      "description": "Sandbox, SASL_SSL SCRAM-SHA-512 as User:bob (no ACLs by default)",
+      "bootstrap_servers": ["localhost:19104", "localhost:19204", "localhost:19304"],
+      "tls": { "ca_file": "certs/ca.crt" },
+      "auth": { "mechanism": "scram-sha-512", "username": "bob", "password": "bob-secret" },
+      "color": "yellow",
+      "labels": ["sandbox"]
+    }
+  }
+}
