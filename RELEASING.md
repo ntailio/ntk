@@ -12,7 +12,7 @@ git commit -am "changelog for v1.2.0"
 git push -u origin release/v1.2.0       # this is the release
 ```
 
-`make release-branch` checks that trunk is clean and matches `origin/trunk`, and that the version doesn't exist yet. It then creates the branch and a changelog template that lists the commits since the last release, as raw material.
+`make release-branch` checks that trunk is clean and matches `origin/trunk`, and that the version doesn't exist yet. It then creates the branch and a changelog template that lists the commits since the previous release, as raw material. For a stable version, "previous release" means the previous *stable* one, so `v1.1.0` covers everything since `v1.0.x`, including what its release candidates had. A pre-release is compared with the tag right before it.
 
 The push starts [the release workflow](.github/workflows/release.yml):
 
@@ -29,6 +29,7 @@ The tag is only created once everything else has worked. If a run fails, fix the
 
 The changelog is the release notes, and people read it to decide whether to upgrade. Write it for them:
 
+- Write a stable release for people coming from the previous stable one. They never ran the release candidates, so describe the result, not the steps in between.
 - Start with one or two sentences on what the release is about.
 - **Breaking changes** come first, each with what to do about it.
 - **Highlights**: what you can do now that you couldn't before. One line each, led by the feature's name.

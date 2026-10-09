@@ -21,15 +21,22 @@ fi
 git rev-parse -q --verify "refs/tags/$version" >/dev/null && fail "tag $version already exists"
 git rev-parse -q --verify "refs/heads/release/$version" >/dev/null && fail "branch release/$version already exists"
 
-# Release tags sit on release branches, not on trunk, so count from where the
-# newest release branched off. versionsort.suffix sorts v1.0.0-rc.1 before v1.0.0.
-previous=$(git -c versionsort.suffix=- tag --list 'v*' --sort=-v:refname | head -n1)
+# A stable release is compared with the previous stable one, so its notes cover
+# everything its release candidates had; a pre-release with the previous tag.
+# Release tags sit on release branches, not on trunk, so count from where that
+# release branched off. versionsort.suffix sorts v1.0.0-rc.1 before v1.0.0.
+tags=$(git -c versionsort.suffix=- tag --list 'v*' --sort=-v:refname)
+if [[ $version != *-* ]]; then
+  tags=$(grep -v -- - <<<"$tags" || true)
+fi
+previous=$(head -n1 <<<"$tags")
 skip=(--invert-grep --grep='^add changelog for v')
 if [[ -n $previous ]]; then
   since="since $previous"
   commits=$(git log --reverse --format='- %s' "${skip[@]}" "$(git merge-base "$previous" HEAD)..HEAD")
 else
   since="in this first release"
+  [[ $version != *-* ]] && since="in this first stable release"
   commits=$(git log --reverse --format='- %s' "${skip[@]}")
 fi
 
