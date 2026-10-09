@@ -223,7 +223,7 @@ func PlanAddPartitions(ctx context.Context, adm *kadm.Client, topic string, tota
 	return pl, nil
 }
 
-func ApplyAddPartitions(ctx context.Context, adm *kadm.Client, pl *plan.Plan) error {
+func ApplyAddPartitions(ctx context.Context, cl *kgo.Client, adm *kadm.Client, pl *plan.Plan) error {
 	var spec AddPartitionsSpec
 	if err := pl.Decode(&spec); err != nil {
 		return err
@@ -237,6 +237,7 @@ func ApplyAddPartitions(ctx context.Context, adm *kadm.Client, pl *plan.Plan) er
 			return fmt.Errorf("%s: %w", r.Topic, wrapMsg(r.Err, r.ErrMessage))
 		}
 	}
+	WaitPartitions(ctx, cl, spec.Topic, spec.Total, 5*time.Second)
 	return nil
 }
 

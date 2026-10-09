@@ -34,7 +34,9 @@ var appliers = map[string]applier{
 	topics.KindDelete: func(ctx context.Context, cl *kafka.Client, pl *plan.Plan) error {
 		return topics.ApplyDelete(ctx, cl.Client, cl.Admin, pl)
 	},
-	topics.KindAddPartitions:  admin(topics.ApplyAddPartitions),
+	topics.KindAddPartitions: func(ctx context.Context, cl *kafka.Client, pl *plan.Plan) error {
+		return topics.ApplyAddPartitions(ctx, cl.Client, cl.Admin, pl)
+	},
 	topics.KindTruncate:       admin(topics.ApplyTruncate),
 	topics.KindReassign:       admin(topics.ApplyReassign),
 	topics.KindCancelReassign: admin(topics.ApplyCancel),

@@ -14,8 +14,31 @@ import (
 
 // WaitPropagated waits (up to timeout) until every broker's metadata shows the
 // topics as present with leaders (exist=true) or absent (exist=false). Kafka
-// applies topic creation and deletion to brokers asynchronously.
+// applies topic changes to brokers asynchronously.
 func WaitPropagated(ctx context.Context, cl *kgo.Client, names []string, exist bool, timeout time.Duration) {
+	waitBrokers(ctx, cl, names, timeout, func(t kmsg.MetadataResponseTopic) bool {
+		return (t.ErrorCode == 0 && len(t.Partitions) > 0 && allLed(t)) == exist
+	})
+}
+
+// WaitPartitions waits (up to timeout) until every broker's metadata shows the
+// topic with at least count partitions, all with leaders.
+func WaitPartitions(ctx context.Context, cl *kgo.Client, name string, count int, timeout time.Duration) {
+	waitBrokers(ctx, cl, []string{name}, timeout, func(t kmsg.MetadataResponseTopic) bool {
+		return t.ErrorCode == 0 && len(t.Partitions) >= count && allLed(t)
+	})
+}
+
+func allLed(t kmsg.MetadataResponseTopic) bool {
+	for _, p := range t.Partitions {
+		if p.Leader < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func waitBrokers(ctx context.Context, cl *kgo.Client, names []string, timeout time.Duration, ok func(kmsg.MetadataResponseTopic) bool) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	md, err := kadm.NewClient(cl).BrokerMetadata(ctx)
@@ -36,13 +59,7 @@ func WaitPropagated(ctx context.Context, cl *kgo.Client, names []string, exist b
 				return
 			}
 			for _, t := range resp.Topics {
-				present := t.ErrorCode == 0 && len(t.Partitions) > 0
-				for _, p := range t.Partitions {
-					if p.Leader < 0 {
-						present = false
-					}
-				}
-				if present != exist {
+				if !ok(t) {
 					done = false
 				}
 			}
