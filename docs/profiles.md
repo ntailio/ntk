@@ -43,11 +43,18 @@ export NTK_PROFILE=prod       # for a whole shell session
 ## Keep production safe
 
 - **`read_only: true`** refuses every write. Good for the profile you use to look at prod.
+- **`deletion_prevention`** decides what happens with destructive commands: deleting topics, groups, ACLs or users, truncating, deleting offsets, aborting transactions, and tombstones on compacted topics.
+  - `always`: refuse them, with or without `-y`. Everything else still works.
+  - `prompt` (the default): show the plan and ask first. `-y` answers yes, for scripts.
+  - `never`: just run them.
 
 ```sh
 ntk profile copy prod prod-admin          # a second profile for the rare write
 ntk profile edit prod --set read_only=true
+ntk profile edit prod-admin --set deletion_prevention=always
 ```
+
+`--dry-run` always works, whatever the setting, so you can still see what a delete would do.
 
 ## Where the file lives
 

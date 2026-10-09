@@ -231,7 +231,6 @@ func PlanAlter(ctx context.Context, adm *kadm.Client, e Entity, ops []Op) (*plan
 			pl.Add("%-26s %s → %s", o.Key, oldS, Format(o.Key, o.Value))
 			if isRate(o.Key) && o.Value < 1024 {
 				pl.Warn("%s=%s is very low; check the unit", o.Key, Format(o.Key, o.Value))
-				pl.Class, pl.Confirm = plan.Destructive, e.String()
 			}
 		}
 		effective = append(effective, o)
@@ -243,7 +242,7 @@ func PlanAlter(ctx context.Context, adm *kadm.Client, e Entity, ops []Op) (*plan
 	if err != nil {
 		return nil, err
 	}
-	np.Changes, np.Warnings, np.Confirm = pl.Changes, pl.Warnings, pl.Confirm
+	np.Changes, np.Warnings = pl.Changes, pl.Warnings
 	if err := alter(ctx, adm, AlterSpec{e, effective}, true); err != nil && len(effective) > 0 {
 		return nil, fmt.Errorf("broker rejected the change: %w", err)
 	}

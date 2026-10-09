@@ -24,7 +24,7 @@ import (
 func inputFromProfile(name string, p *profile.Profile) profileInput {
 	in := profileInput{
 		name: name, description: p.Description, bootstrap: strings.Join(p.BootstrapServers, ","), principal: p.Principal,
-		readOnly: p.ReadOnly, color: p.Color,
+		readOnly: p.ReadOnly, color: p.Color, deletion: p.DeletionPrevention,
 		mechanism: p.Auth.Mechanism, username: p.Auth.Username, password: p.Auth.Password, security: secPlaintext,
 	}
 	if in.mechanism == "none" || in.mechanism == "" {

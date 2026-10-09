@@ -98,4 +98,4 @@ Data goes to stdout and everything else (progress, warnings, prompts) to stderr,
 
 ## Exit codes
 
-Scripts can branch on them: `0` ok, `1` error, `2` usage, `3` can't connect, `4` not found, `5` a check failed (lag threshold, health), `6` refused (read-only profile or declined confirmation), `7` not authorized.
+Scripts can branch on them: `0` ok, `1` error, `2` usage, `3` can't connect, `4` not found, `5` a check failed (lag threshold, health), `6` refused (read-only profile, `deletion_prevention`, or a declined confirmation), `7` not authorized.

@@ -165,7 +165,7 @@ ntk consume orders --from -1h -o 'exec:jq -c "select(.status == \"FAILED\")"'
 
 ![profiles: a staged connection test and a read-only profile refusing a delete](assets/demos/profiles.gif)
 
-Profiles can be read-only, and destructive commands show a plan before anything happens. `ntk profile test` checks DNS, TCP, TLS, SASL and metadata one step at a time and tells you which one broke.
+Profiles can be read-only, and `deletion_prevention` decides what destructive commands do: refuse them (`always`), ask first (`prompt`, the default), or just run them (`never`). Either way they show the plan first. `ntk profile test` checks DNS, TCP, TLS, SASL and metadata one step at a time and tells you which one broke.
 
 ## License
 

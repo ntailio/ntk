@@ -46,7 +46,7 @@ ntk topic elect-leaders orders              # preferred leader election
 ntk topic delete orders.tmp
 ```
 
-You see the plan first: partitions, size, message count, and which consumer groups still read the topic.
+You see the plan first: partitions, size, message count, and which consumer groups still read the topic. Whether ntk then asks, refuses, or just deletes depends on the profile's [`deletion_prevention`](profiles.md#keep-production-safe). With `--regex`, the plan lists every topic the pattern matched, even with `-y`.
 
 ## Everything can be a dry run
 

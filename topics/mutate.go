@@ -172,11 +172,6 @@ func PlanDelete(ctx context.Context, adm *kadm.Client, names []string) (*plan.Pl
 			pl.Warn("%s is an internal topic", n)
 		}
 	}
-	if len(names) == 1 {
-		pl.Confirm = names[0]
-	} else {
-		pl.Confirm = fmt.Sprintf("delete %d topics", len(names))
-	}
 	return pl, nil
 }
 
@@ -294,7 +289,6 @@ func PlanTruncate(ctx context.Context, adm *kadm.Client, topic string, o Truncat
 	if len(spec.Offsets) > 0 {
 		pl.Summary = fmt.Sprintf("Delete %s messages from %q:", units.Count(total), topic)
 	}
-	pl.Confirm = topic
 	return rebuild(pl, spec)
 }
 
@@ -327,7 +321,7 @@ func rebuild(pl *plan.Plan, payload any) (*plan.Plan, error) {
 	if err != nil {
 		return nil, err
 	}
-	np.Changes, np.Warnings, np.Confirm = pl.Changes, pl.Warnings, pl.Confirm
+	np.Changes, np.Warnings = pl.Changes, pl.Warnings
 	return np, nil
 }
 

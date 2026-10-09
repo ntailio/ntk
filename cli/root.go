@@ -34,7 +34,6 @@ type globalFlags struct {
 	outputSet   bool
 	noColor     bool
 	yes         bool
-	confirm     string
 	dryRun      bool
 	timeout     time.Duration
 	verbose     bool
@@ -118,7 +117,6 @@ func (a *app) newRootCmd() *cobra.Command {
 	f.BoolVar(&a.flags.noInput, "no-input", os.Getenv("NTK_NO_INPUT") != "", "never prompt; fail when input is missing (env NTK_NO_INPUT)")
 	f.BoolVar(&a.flags.noColor, "no-color", os.Getenv("NO_COLOR") != "", "disable color")
 	f.BoolVarP(&a.flags.yes, "yes", "y", false, "skip confirmation prompts")
-	f.StringVar(&a.flags.confirm, "confirm", "", "with -y: the confirmation text for operations that always need one")
 	f.BoolVar(&a.flags.dryRun, "dry-run", false, "show what would change without changing anything")
 	f.DurationVar(&a.flags.timeout, "timeout", 0, "overall command timeout (e.g. 30s)")
 	f.BoolVar(&a.flags.verbose, "verbose", false, "verbose logs to stderr")

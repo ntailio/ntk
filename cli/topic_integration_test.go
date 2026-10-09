@@ -5,6 +5,7 @@ package cli
 
 import (
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -68,7 +69,7 @@ func TestTopicDeleteRegexAndPresets(t *testing.T) {
 	e.ok("topic", "create", a, b, "-P", "1", "--preset", "compacted")
 	contains(t, e.ok("topic", "config", a), "compact")
 	contains(t, e.ok("topic", "config", b), "compact")
-	e.ok("topic", "delete", "--regex", "^"+prefix, "-y", "--confirm", "delete 2 topics")
+	e.ok("topic", "delete", "--regex", "^"+prefix, "-y")
 	e.gone(a)
 	e.gone(b)
 	e.fails(exitcode.Usage, "topic", "create", testkit.Name(t, "x"), "--preset", "nope")
@@ -147,14 +148,44 @@ func TestSavedPlanApply(t *testing.T) {
 }
 
 func TestSafetyRules(t *testing.T) {
-	ro := map[string]any{"bootstrap_servers": testkit.Bootstrap(), "auth": map[string]any{"mechanism": "none"}, "read_only": true}
-	e := newEnv(t, map[string]any{"ro": ro})
+	profile := func(extra map[string]any) map[string]any {
+		p := map[string]any{"bootstrap_servers": testkit.Bootstrap(), "auth": map[string]any{"mechanism": "none"}}
+		maps.Copy(p, extra)
+		return p
+	}
+	e := newEnv(t, map[string]any{
+		"ro":   profile(map[string]any{"read_only": true}),
+		"keep": profile(map[string]any{"deletion_prevention": "always"}),
+		"free": profile(map[string]any{"deletion_prevention": "never"}),
+		"typo": profile(map[string]any{"deletion_prevention": "sometimes"}),
+	})
 	name := testkit.Topic(t, e.adm, "safe", 1)
 
 	_, errOut := e.fails(exitcode.Refused, "-p", "ro", "topic", "delete", name, "-y")
 	contains(t, errOut, "read-only")
 	e.fails(exitcode.Refused, "-p", "ro", "topic", "create", testkit.Name(t, "ro"))
 	e.ok("-p", "ro", "topic", "describe", name)
+
+	// always: destructive commands are refused, even with -y; previews and other writes still work.
+	_, errOut = e.fails(exitcode.Refused, "-p", "keep", "topic", "delete", name, "-y")
+	contains(t, errOut, "deletion_prevention")
+	e.ok("-p", "keep", "topic", "delete", name, "--dry-run")
+	e.ok("-p", "keep", "topic", "config", "set", name, "retention.ms=2d", "-y")
+
+	// prompt (the default): asks, so without a terminal it needs -y.
+	_, errOut = e.fails(exitcode.Usage, "topic", "delete", name)
+	contains(t, errOut, "-y")
+
+	// never: no question asked.
+	_, errOut, code := e.run("-p", "free", "topic", "delete", name)
+	if code != exitcode.OK {
+		t.Fatalf("never: exit %d: %s", code, errOut)
+	}
+	contains(t, errOut, name)
+	e.gone(name)
+
+	_, errOut = e.fails(exitcode.Error, "-p", "typo", "topic", "list")
+	contains(t, errOut, "deletion_prevention")
 }
 
 func TestCompletionTopics(t *testing.T) {
@@ -166,19 +197,17 @@ func TestCompletionTopics(t *testing.T) {
 	contains(t, e.ok("__complete", "-p", "sand"), "sandbox")
 }
 
-func TestTopicDeleteRegexNeedsConfirm(t *testing.T) {
+func TestTopicDeleteRegexShowsMatches(t *testing.T) {
 	e := newEnv(t, nil)
 	a := testkit.Topic(t, e.adm, "rx-a", 1)
 	b := testkit.Topic(t, e.adm, "rx-b", 1)
 	pattern := "^(" + regexp.QuoteMeta(a) + "|" + regexp.QuoteMeta(b) + ")$"
 
-	_, errOut := e.fails(exitcode.Usage, "topic", "delete", "--regex", pattern, "-y")
-	contains(t, errOut, a, b, `--confirm="delete 2 topics"`)
-	if got := e.ok("topic", "list", "-o", "name"); !strings.Contains(got, a) || !strings.Contains(got, b) {
-		t.Fatal("topics were deleted without --confirm")
+	_, errOut, code := e.run("topic", "delete", "--regex", pattern, "-y")
+	if code != exitcode.OK {
+		t.Fatalf("exit %d: %s", code, errOut)
 	}
-
-	e.ok("topic", "delete", "--regex", pattern, "-y", "--confirm", "delete 2 topics")
+	contains(t, errOut, a, b)
 	e.gone(a)
 	e.gone(b)
 }

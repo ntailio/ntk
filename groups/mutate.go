@@ -250,11 +250,6 @@ func PlanDelete(ctx context.Context, cl *kgo.Client, adm *kadm.Client, names []s
 		}
 		pl.Add("- %s (%s, %d topics, committed offsets for %d partitions)", n, d.Type, len(d.Topics), len(d.Offsets))
 	}
-	if len(names) == 1 {
-		pl.Confirm = names[0]
-	} else {
-		pl.Confirm = fmt.Sprintf("delete %d groups", len(names))
-	}
 	return pl, nil
 }
 
@@ -302,12 +297,11 @@ func PlanDeleteOffsets(ctx context.Context, cl *kgo.Client, adm *kadm.Client, gr
 		spec.Partitions = append(spec.Partitions, o.Partition)
 		pl.Add("- %s/%d (committed %s)", topic, o.Partition, units.Count(o.At))
 	}
-	pl.Confirm = group
 	np, err := plan.New(pl.Kind, pl.Class, pl.Summary, spec)
 	if err != nil {
 		return nil, err
 	}
-	np.Changes, np.Confirm = pl.Changes, pl.Confirm
+	np.Changes = pl.Changes
 	return np, nil
 }
 

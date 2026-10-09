@@ -261,9 +261,7 @@ func TestHangingTransaction(t *testing.T) {
 		t.Fatalf("hanging: %+v", hs)
 	}
 	start := hs[0].TxnStartOffset
-	_, errOut := e.fails(exitcode.Usage, "tx", "abort", "--topic", topic, "--partition", "0", "--start-offset", itoa(start), "-y")
-	contains(t, errOut, "--confirm")
-	e.ok("tx", "abort", "--topic", topic, "--partition", "0", "--start-offset", itoa(start), "-y", "--confirm", topic+"/0")
+	e.ok("tx", "abort", "--topic", topic, "--partition", "0", "--start-offset", itoa(start), "-y")
 	eventually(t, "transaction aborted", func() bool {
 		return !strings.Contains(e.out("tx", "producers", topic), "open")
 	})

@@ -294,11 +294,7 @@ func PlanDelete(ctx context.Context, cl *kgo.Client, list []ACL, summary, self s
 		if self != "" && a.Principal == self && a.Permission == "ALLOW" && a.ResourceType == "CLUSTER" &&
 			(a.Operation == "DESCRIBE" || a.Operation == "ALTER" || a.Operation == "ALL") {
 			pl.Warn("this removes %s %s on the cluster from %s, the principal this profile uses", a.Permission, a.Operation, self)
-			pl.Confirm = self
 		}
-	}
-	if pl.Confirm == "" && len(list) > 0 {
-		pl.Confirm = fmt.Sprintf("delete %d acls", len(list))
 	}
 	return pl, nil
 }
@@ -635,9 +631,6 @@ func PlanImport(ctx context.Context, cl *kgo.Client, desired []ACL, prune bool, 
 	}
 	for _, a := range spec.Delete {
 		pl.Add("- %s", a)
-	}
-	if len(spec.Delete) > 0 {
-		pl.Confirm = fmt.Sprintf("delete %d acls", len(spec.Delete))
 	}
 	return pl, nil
 }

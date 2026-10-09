@@ -39,6 +39,7 @@ type profileInput struct {
 	principal   string
 	readOnly    bool
 	color       string
+	deletion    string
 }
 
 const (
@@ -59,12 +60,13 @@ func (in *profileInput) usesSASL() bool {
 
 func (in *profileInput) build() (*profile.Profile, error) {
 	p := &profile.Profile{
-		Description:      in.description,
-		BootstrapServers: splitList(in.bootstrap),
-		Principal:        in.principal,
-		ReadOnly:         in.readOnly,
-		Color:            in.color,
-		Auth:             profile.Auth{Mechanism: "none"},
+		Description:        in.description,
+		BootstrapServers:   splitList(in.bootstrap),
+		Principal:          in.principal,
+		ReadOnly:           in.readOnly,
+		Color:              in.color,
+		DeletionPrevention: in.deletion,
+		Auth:               profile.Auth{Mechanism: "none"},
 	}
 	if in.usesTLS() {
 		t := &profile.TLS{Enabled: true, ServerName: in.serverName, InsecureSkipVerify: in.insecure, KeyPassword: in.keyPassword}
@@ -224,6 +226,7 @@ func (a *app) newProfileCreateCmd() *cobra.Command {
 	f.StringVar(&in.principal, "principal", "", "expected principal, e.g. User:bob")
 	f.BoolVar(&in.readOnly, "read-only", false, "refuse all write operations with this profile")
 	f.StringVar(&in.color, "color", "", "badge color: green, yellow, red, blue, magenta, or #hex")
+	f.StringVar(&in.deletion, "deletion-prevention", "", "destructive commands: always (refuse), prompt (ask first; default), or never")
 	f.BoolVar(&activate, "activate", false, "make the new profile active")
 	f.BoolVar(&noTest, "no-test", false, "skip the connection test")
 	f.StringVar(&properties, "from-properties", "", "import a Java client properties file (bootstrap, security, SASL, PEM stores)")
@@ -324,7 +327,11 @@ func (a *app) profileWizard(ctx context.Context, s *profile.Store, in *profileIn
 		huh.NewSelect[string]().Title("Badge color").Options(
 			huh.NewOption("none", ""), huh.NewOption("green", "green"), huh.NewOption("yellow", "yellow"),
 			huh.NewOption("red", "red"), huh.NewOption("blue", "blue"), huh.NewOption("magenta", "magenta"),
-		).Value(&in.color))
+		).Value(&in.color),
+		huh.NewSelect[string]().Title("Deletion prevention").Description("what happens with destructive commands like topic delete").
+			Options(huh.NewOption("prompt: ask first", ""), huh.NewOption("always: refuse them", profile.DeletionAlways),
+				huh.NewOption("never: just run them", profile.DeletionNever)).
+			Value(&in.deletion))
 	return a.runForm(ctx, huh.NewForm(huh.NewGroup(fields...)))
 }
 

@@ -274,7 +274,6 @@ func PlanAbort(ctx context.Context, adm *kadm.Client, t AbortTarget) (*plan.Plan
 	}
 	pl.Add("effect: records from this transaction become aborted; read_committed consumers resume")
 	pl.Warn("writing abort markers needs CLUSTER_ACTION on the cluster")
-	pl.Confirm = where
 	return pl, nil
 }
 

@@ -21,7 +21,6 @@ import (
 	"github.com/ntailio/ntk/exitcode"
 	"github.com/ntailio/ntk/groups"
 	"github.com/ntailio/ntk/kafka"
-	"github.com/ntailio/ntk/plan"
 	"github.com/ntailio/ntk/principals"
 	"github.com/ntailio/ntk/profile"
 	"github.com/ntailio/ntk/quotas"
@@ -251,7 +250,6 @@ func (a *app) newUserDeleteCmd() *cobra.Command {
 			}
 			if s.prof.Auth.Username == args[0] {
 				pl.Warn("this is the credential profile %q uses: it will stop working", s.name)
-				pl.Class, pl.Confirm = plan.Destructive, args[0]
 			}
 			return a.run(cmd.Context(), s, pl)
 		},

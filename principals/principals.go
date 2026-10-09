@@ -176,12 +176,11 @@ func PlanDelete(ctx context.Context, cl *kgo.Client, adm *kadm.Client, user stri
 	} else if len(own) > 0 {
 		pl.Warn("User:%s still has %d ACL(s); add --with-acls to delete them too", user, len(own))
 	}
-	pl.Confirm = user
 	np, err := plan.New(pl.Kind, pl.Class, pl.Summary, spec)
 	if err != nil {
 		return nil, err
 	}
-	np.Changes, np.Warnings, np.Confirm = pl.Changes, pl.Warnings, pl.Confirm
+	np.Changes, np.Warnings = pl.Changes, pl.Warnings
 	return np, nil
 }
 

@@ -82,8 +82,6 @@ type (
 
 type confirmState struct {
 	pl    *plan.Plan
-	typed bool
-	input textinput.Model
 	after func(m *model) tea.Cmd
 }
 
@@ -308,15 +306,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case msg.pl.Class == plan.SafeWrite:
 			m.flash("applying…", false)
 			return m, m.apply(msg.pl, msg.after)
+		case msg.pl.Class == plan.Destructive && m.prof.Deletion() == profile.DeletionAlways:
+			m.flash(fmt.Sprintf("refused: profile %q has deletion_prevention set to always", m.profileName), true)
+		case msg.pl.Class == plan.Destructive && m.prof.Deletion() == profile.DeletionNever:
+			m.flash("applying…", false)
+			return m, m.apply(msg.pl, msg.after)
 		default:
-			c := &confirmState{pl: msg.pl, after: msg.after, input: textinput.New()}
-			c.typed = msg.pl.Class == plan.Destructive && msg.pl.Confirm != "" && msg.pl.Typed
-			c.input.Prompt = ""
-			m.confirm = c
+			m.confirm = &confirmState{pl: msg.pl, after: msg.after}
 			m.flash("", false)
-			if c.typed {
-				return m, c.input.Focus()
-			}
 		}
 		return m, nil
 	case appliedMsg:
@@ -485,32 +482,16 @@ func (m *model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 
 func (m *model) handleConfirm(msg tea.KeyPressMsg) tea.Cmd {
 	c := m.confirm
-	key := msg.String()
-	if key == "esc" || (!c.typed && (key == "n" || key == "N")) {
+	switch msg.String() {
+	case "esc", "n", "N":
 		m.confirm = nil
 		m.flash("aborted; nothing changed", false)
-		return nil
-	}
-	if !c.typed {
-		if key == "y" || key == "Y" {
-			m.confirm = nil
-			m.flash("applying…", false)
-			return m.apply(c.pl, c.after)
-		}
-		return nil
-	}
-	if key == "enter" {
+	case "y", "Y":
 		m.confirm = nil
-		if c.input.Value() != c.pl.Confirm {
-			m.flash("confirmation did not match; nothing changed", true)
-			return nil
-		}
 		m.flash("applying…", false)
 		return m.apply(c.pl, c.after)
 	}
-	var cmd tea.Cmd
-	c.input, cmd = c.input.Update(msg)
-	return cmd
+	return nil
 }
 
 func (m *model) cycleRefresh() {
@@ -691,12 +672,7 @@ func (m *model) confirmView() string {
 		b.WriteString(styleWarn.Render("  ! "+w) + "\n")
 	}
 	b.WriteString("\n")
-	if c.typed {
-		b.WriteString(fmt.Sprintf("Type %s to confirm: %s\n", styleKey.Render(c.pl.Confirm), c.input.View()))
-		b.WriteString(styleDim.Render("enter confirm · esc cancel"))
-	} else {
-		b.WriteString(styleKey.Render("y") + " apply · " + styleKey.Render("n/esc") + " cancel")
-	}
+	b.WriteString(styleKey.Render("y") + " apply · " + styleKey.Render("n/esc") + " cancel")
 	return b.String()
 }
 

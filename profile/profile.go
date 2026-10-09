@@ -22,16 +22,20 @@ type File struct {
 }
 
 type Profile struct {
-	Description      string    `json:"description,omitempty"`
-	BootstrapServers []string  `json:"bootstrap_servers"`
-	ClientID         string    `json:"client_id,omitempty"`
-	Principal        string    `json:"principal,omitempty"`
-	TLS              *TLS      `json:"tls,omitempty"`
-	Auth             Auth      `json:"auth"`
-	ReadOnly         bool      `json:"read_only,omitempty"`
-	Color            string    `json:"color,omitempty"`
-	Timeouts         *Timeouts `json:"timeouts,omitempty"`
-	Defaults         *Defaults `json:"defaults,omitempty"`
+	Description      string   `json:"description,omitempty"`
+	BootstrapServers []string `json:"bootstrap_servers"`
+	ClientID         string   `json:"client_id,omitempty"`
+	Principal        string   `json:"principal,omitempty"`
+	TLS              *TLS     `json:"tls,omitempty"`
+	Auth             Auth     `json:"auth"`
+	ReadOnly         bool     `json:"read_only,omitempty"`
+	Color            string   `json:"color,omitempty"`
+
+	// DeletionPrevention controls destructive commands: always (refuse them),
+	// prompt (ask first; the default) or never (just run them).
+	DeletionPrevention string    `json:"deletion_prevention,omitempty"`
+	Timeouts           *Timeouts `json:"timeouts,omitempty"`
+	Defaults           *Defaults `json:"defaults,omitempty"`
 }
 
 type TLS struct {
@@ -131,8 +135,27 @@ func ValidateName(name string) error {
 	return nil
 }
 
+const (
+	DeletionAlways = "always"
+	DeletionPrompt = "prompt"
+	DeletionNever  = "never"
+)
+
+// Deletion returns the deletion_prevention setting, prompt when unset.
+func (p *Profile) Deletion() string {
+	if p.DeletionPrevention == "" {
+		return DeletionPrompt
+	}
+	return p.DeletionPrevention
+}
+
 func (p *Profile) Validate() error {
 	var errs []error
+	switch p.DeletionPrevention {
+	case "", DeletionAlways, DeletionPrompt, DeletionNever:
+	default:
+		errs = append(errs, fmt.Errorf("deletion_prevention: %q must be always, prompt, or never", p.DeletionPrevention))
+	}
 	if len(p.BootstrapServers) == 0 {
 		errs = append(errs, errors.New("bootstrap_servers: at least one host:port is required"))
 	}

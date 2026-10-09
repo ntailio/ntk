@@ -55,8 +55,6 @@ type Plan struct {
 	Summary   string          `json:"summary"`
 	Changes   []string        `json:"changes"`
 	Warnings  []string        `json:"warnings,omitempty"`
-	Confirm   string          `json:"confirm_name,omitempty"`
-	Typed     bool            `json:"always_typed,omitempty"`
 	Payload   json.RawMessage `json:"payload"`
 }
 

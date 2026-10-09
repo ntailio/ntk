@@ -37,7 +37,7 @@ Every view can tell you the equivalent CLI command (`Y` or `:cmd`), so the TUI d
 
 ## Changing things
 
-Every write shows the same plan the CLI would print and asks for confirmation. Read-only profiles hide the write actions.
+Every write shows the same plan the CLI would print and asks for confirmation. Read-only profiles hide the write actions, and the profile's `deletion_prevention` applies to deletes just like in the CLI.
 
 ## Settings
 

@@ -254,7 +254,6 @@ func (a *app) newTxCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			pl.Typed = true
 			return a.run(cmd.Context(), s, pl)
 		},
 	}

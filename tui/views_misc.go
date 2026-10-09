@@ -14,6 +14,7 @@ import (
 	"github.com/ntailio/ntk/brokers"
 	"github.com/ntailio/ntk/health"
 	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/profile"
 	"github.com/ntailio/ntk/topics"
 	"github.com/ntailio/ntk/tx"
 	"github.com/ntailio/ntk/units"
@@ -65,9 +66,6 @@ func newTxView(m *model) view {
 		start := h.TxnStartOffset
 		return m.planThen(func(ctx context.Context) (*plan.Plan, error) {
 			pl, err := tx.PlanAbort(ctx, m.client.Admin, tx.AbortTarget{Topic: h.Topic, Partition: h.Partition, StartOffset: &start})
-			if pl != nil {
-				pl.Typed = true
-			}
 			return pl, err
 		}, nil)
 	}
@@ -235,10 +233,14 @@ func newProfilesView(m *model) view {
 			if name == m.profileName {
 				marker = "*"
 			}
-			flags := ""
+			var fl []string
 			if p.ReadOnly {
-				flags = "read-only"
+				fl = append(fl, "read-only")
 			}
+			if d := p.Deletion(); d != profile.DeletionPrompt {
+				fl = append(fl, "deletes: "+d)
+			}
+			flags := strings.Join(fl, ",")
 			rows = append(rows, row{cells: []string{name, marker, p.BootstrapServers[0], p.Auth.Mechanism, p.SecurityProtocol(), dash(flags), p.Description}})
 		}
 		return []string{"NAME", "", "BOOTSTRAP", "AUTH", "SECURITY", "FLAGS", "DESCRIPTION"}, rows, nil

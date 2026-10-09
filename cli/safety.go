@@ -90,13 +90,18 @@ func (a *app) confirmPlan(s *session, pl *plan.Plan) error {
 	if pl.Class == plan.SafeWrite {
 		return nil
 	}
-	typed := pl.Class == plan.Destructive && pl.Confirm != "" && pl.Typed
-	if a.flags.yes {
-		if pl.Typed {
+	if pl.Class == plan.Destructive {
+		switch s.prof.Deletion() {
+		case profile.DeletionAlways:
+			return exitcode.With(exitcode.Refused, fmt.Errorf("refused: profile %q has deletion_prevention set to always", s.name))
+		case profile.DeletionNever:
 			fmt.Fprintf(a.stderr, "%s %s", a.badge(s), indentPlan(pl))
+			return nil
 		}
-		if typed && a.flags.confirm != pl.Confirm {
-			return exitcode.With(exitcode.Usage, fmt.Errorf("this operation always needs typed confirmation: -y also needs --confirm=%q", pl.Confirm))
+	}
+	if a.flags.yes {
+		if pl.Class == plan.Destructive {
+			fmt.Fprintf(a.stderr, "%s %s", a.badge(s), indentPlan(pl))
 		}
 		return nil
 	}
@@ -104,13 +109,6 @@ func (a *app) confirmPlan(s *session, pl *plan.Plan) error {
 		return exitcode.With(exitcode.Usage, errors.New("confirmation required but stdin is not a terminal; re-run with -y"))
 	}
 	fmt.Fprintf(a.stderr, "%s %s", a.badge(s), indentPlan(pl))
-	if typed {
-		answer := a.prompt(fmt.Sprintf("Type %q to confirm: ", pl.Confirm))
-		if answer != pl.Confirm {
-			return exitcode.With(exitcode.Refused, errors.New("confirmation did not match; nothing changed"))
-		}
-		return nil
-	}
 	answer := strings.ToLower(a.prompt("Apply? [y/N] "))
 	if answer != "y" && answer != "yes" {
 		return exitcode.With(exitcode.Refused, errors.New("aborted; nothing changed"))

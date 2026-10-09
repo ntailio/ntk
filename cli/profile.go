@@ -34,14 +34,15 @@ func (a *app) newProfileCmd() *cobra.Command {
 }
 
 type profileRow struct {
-	Name             string   `json:"name"`
-	Active           bool     `json:"active"`
-	Description      string   `json:"description,omitempty"`
-	BootstrapServers []string `json:"bootstrap_servers"`
-	Auth             string   `json:"auth"`
-	SecurityProtocol string   `json:"security_protocol"`
-	MTLS             bool     `json:"mtls"`
-	ReadOnly         bool     `json:"read_only"`
+	Name               string   `json:"name"`
+	Active             bool     `json:"active"`
+	Description        string   `json:"description,omitempty"`
+	BootstrapServers   []string `json:"bootstrap_servers"`
+	Auth               string   `json:"auth"`
+	SecurityProtocol   string   `json:"security_protocol"`
+	MTLS               bool     `json:"mtls"`
+	ReadOnly           bool     `json:"read_only"`
+	DeletionPrevention string   `json:"deletion_prevention"`
 }
 
 type profileRows []profileRow
@@ -76,6 +77,9 @@ func (r profileRows) Rows(wide bool) [][]string {
 		if p.ReadOnly {
 			flags = append(flags, "read-only")
 		}
+		if p.DeletionPrevention != profile.DeletionPrompt {
+			flags = append(flags, "deletes: "+p.DeletionPrevention)
+		}
 		row := []string{marker, p.Name, bootstrap, p.Auth, tls, strings.Join(flags, ", ")}
 		if wide {
 			row = append(row, p.Description)
@@ -108,14 +112,15 @@ func (a *app) newProfileListCmd() *cobra.Command {
 			for _, name := range s.Names() {
 				p := s.File.Profiles[name]
 				rows = append(rows, profileRow{
-					Name:             name,
-					Active:           name == s.File.Active,
-					Description:      p.Description,
-					BootstrapServers: p.BootstrapServers,
-					Auth:             p.Auth.Mechanism,
-					SecurityProtocol: p.SecurityProtocol(),
-					MTLS:             p.TLS.HasClientCert(),
-					ReadOnly:         p.ReadOnly,
+					Name:               name,
+					Active:             name == s.File.Active,
+					Description:        p.Description,
+					BootstrapServers:   p.BootstrapServers,
+					Auth:               p.Auth.Mechanism,
+					SecurityProtocol:   p.SecurityProtocol(),
+					MTLS:               p.TLS.HasClientCert(),
+					ReadOnly:           p.ReadOnly,
+					DeletionPrevention: p.Deletion(),
 				})
 			}
 			return a.render(rows)

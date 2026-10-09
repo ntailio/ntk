@@ -342,6 +342,14 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 	if a.flags.dryRun {
 		return a.dryRunProduce(cmd.Context(), s, src, topic, in, f)
 	}
+	if f.tombstone {
+		if d, err := describeCleanup(cmd.Context(), s, topic); err == nil && strings.Contains(d, "compact") {
+			pl := &plan.Plan{Class: plan.Destructive, Summary: "Delete key from compacted topic:", Changes: []string{fmt.Sprintf("- %s key=%q", topic, f.key)}}
+			if err := a.confirmPlan(s, pl); err != nil {
+				return err
+			}
+		}
+	}
 
 	opts, err := produce.ClientOptions(f.opts, manual)
 	if err != nil {
@@ -450,6 +458,19 @@ func (a *app) dryRunProduce(ctx context.Context, s *session, src produce.Source,
 		}
 	}
 	return a.showDryRun(s, pl)
+}
+
+func describeCleanup(ctx context.Context, s *session, topic string) (string, error) {
+	rcs, err := s.cl.Admin.DescribeTopicConfigs(ctx, topic)
+	if err != nil || len(rcs) == 0 {
+		return "", err
+	}
+	for _, c := range rcs[0].Configs {
+		if c.Key == "cleanup.policy" {
+			return c.MaybeValue(), nil
+		}
+	}
+	return "", nil
 }
 
 type copySink struct {

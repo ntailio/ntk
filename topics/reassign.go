@@ -417,11 +417,7 @@ func PlanElect(ctx context.Context, adm *kadm.Client, topicNames []string, parti
 	pl.Summary = fmt.Sprintf("Run %s leader election for %s:", what, plural(len(spec.Partitions), "partition"))
 	if unclean {
 		pl.Warn("unclean election can lose acknowledged data: the new leader may be missing records")
-		if len(topicNames) == 1 {
-			pl.Confirm = topicNames[0]
-		} else {
-			pl.Confirm = "unclean election"
-		}
+		pl.Class = plan.Destructive
 	}
 	return rebuild(pl, spec)
 }
