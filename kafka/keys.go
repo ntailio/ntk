@@ -155,11 +155,13 @@ func keyPair(certPEM, keyPEM []byte, password string) (tls.Certificate, error) {
 				return tls.Certificate{}, err
 			}
 			return tls.X509KeyPair(certPEM, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}))
-		case x509.IsEncryptedPEMBlock(block): //nolint:staticcheck // legacy OpenSSL "Proc-Type: 4,ENCRYPTED" keys
+		//lint:ignore SA1019 legacy OpenSSL "Proc-Type: 4,ENCRYPTED" keys; the padding-oracle risk needs a remote decryptor, not a local key file
+		case x509.IsEncryptedPEMBlock(block):
 			if password == "" {
 				return tls.Certificate{}, errors.New("the private key is encrypted: set tls.key_password")
 			}
-			der, err := x509.DecryptPEMBlock(block, []byte(password)) //nolint:staticcheck
+			//lint:ignore SA1019 see above
+			der, err := x509.DecryptPEMBlock(block, []byte(password))
 			if err != nil {
 				return tls.Certificate{}, fmt.Errorf("decrypting key: %w", err)
 			}

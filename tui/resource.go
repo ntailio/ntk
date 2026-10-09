@@ -271,5 +271,3 @@ func (t *tabbedView) close() {
 		}
 	}
 }
-
-func goTo(v view) tea.Cmd { return func() tea.Msg { return pushMsg{v} } }

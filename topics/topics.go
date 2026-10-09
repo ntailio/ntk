@@ -20,21 +20,20 @@ import (
 )
 
 type Topic struct {
-	Name               string        `json:"name"`
-	ID                 string        `json:"id"`
-	Partitions         int           `json:"partitions"`
-	ReplicationFactor  int           `json:"replication_factor"`
-	UnderReplicated    int           `json:"under_replicated_partitions"`
-	UnderMinISR        int           `json:"under_min_isr_partitions"`
-	Offline            int           `json:"offline_partitions"`
-	Internal           bool          `json:"internal"`
-	SizeBytes          int64         `json:"size_bytes"`
-	Messages           int64         `json:"messages"`
-	RetentionMs        *int64        `json:"retention_ms,omitempty"`
-	CleanupPolicy      string        `json:"cleanup_policy,omitempty"`
-	MinInsyncReplicas  int           `json:"min_insync_replicas,omitempty"`
-	LeadersByBroker    map[int32]int `json:"leaders_by_broker,omitempty"`
-	partitionsByLeader map[int32][]int32
+	Name              string        `json:"name"`
+	ID                string        `json:"id"`
+	Partitions        int           `json:"partitions"`
+	ReplicationFactor int           `json:"replication_factor"`
+	UnderReplicated   int           `json:"under_replicated_partitions"`
+	UnderMinISR       int           `json:"under_min_isr_partitions"`
+	Offline           int           `json:"offline_partitions"`
+	Internal          bool          `json:"internal"`
+	SizeBytes         int64         `json:"size_bytes"`
+	Messages          int64         `json:"messages"`
+	RetentionMs       *int64        `json:"retention_ms,omitempty"`
+	CleanupPolicy     string        `json:"cleanup_policy,omitempty"`
+	MinInsyncReplicas int           `json:"min_insync_replicas,omitempty"`
+	LeadersByBroker   map[int32]int `json:"leaders_by_broker,omitempty"`
 }
 
 type ListOptions struct {

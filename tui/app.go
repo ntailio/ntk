@@ -768,11 +768,7 @@ func (m *model) footer() string {
 	if m.form != nil || m.confirm != nil {
 		return ""
 	}
-	var hs []hint
-	for _, h := range m.top().hints(m) {
-		hs = append(hs, h)
-	}
-	hs = append(hs, hint{":", "cmd"}, hint{"/", "filter"}, hint{"?", "help"}, hint{"q", "quit"})
+	hs := append(m.top().hints(m), hint{":", "cmd"}, hint{"/", "filter"}, hint{"?", "help"}, hint{"q", "quit"})
 	var parts []string
 	for _, h := range hs {
 		parts = append(parts, styleKey.Render(h.key)+" "+styleDim.Render(h.desc))
