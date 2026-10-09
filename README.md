@@ -22,7 +22,7 @@
     <a href="https://ntail.io">ntail.io</a>
   </p>
   <p align="center">
-    Built by <a href="https://ntail.io"><b>ntail</b></a>, serverless Kafka without the bandwidth bill. <a href="https://console.ntail.io/signup">Free tier</a>, no card required.
+    Built by <a href="https://ntail.io"><b>ntail</b></a>, serverless Kafka without the bandwidth bill. <a href="https://ntail.io/pricing">Free tier</a>, no card required.
   </p>
 </p>
 
@@ -58,11 +58,17 @@ If you need somewhere to point it at, ntail has a [free tier](https://console.nt
 
 ## Install
 
+Grab a single binary for your platform from the [releases page](https://github.com/ntailio/ntk/releases): Linux, macOS, Windows and FreeBSD, on amd64 and arm64. Each release has a checksums file.
+
 ```sh
+# or run it in Docker, with your profiles mounted
+docker run --rm -it -v ~/.config/ntk:/home/ntk/.config/ntk ghcr.io/ntailio/ntk topic list
+
+# or build it with Go 1.26+
 go install github.com/ntailio/ntk/cmd/ntk@latest
 ```
 
-Or from a checkout, `make build` writes `bin/ntk`. Go 1.26 or newer is required. Linux and macOS are fully supported; Windows works for everything except the Unix socket outputs.
+Linux and macOS are fully supported; Windows works for everything except the Unix socket outputs.
 
 Then connect to a cluster and have a look around:
 

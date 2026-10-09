@@ -1,0 +1,157 @@
+name: release
+
+# Pushing release/vX.Y.Z releases vX.Y.Z: test, build, publish, tag, then copy
+# the changelog back to trunk. See RELEASING.md.
+on:
+  push:
+    branches: ['release/v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check the version, changelog and tag
+        id: check
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          version=${BRANCH#release/}
+          scripts/release-notes.sh "$version" >/dev/null
+          if git ls-remote --exit-code --tags origin "refs/tags/$version" >/dev/null; then
+            echo "::error::$version is already released; cut a new version instead"
+            exit 1
+          fi
+          prerelease=false
+          [[ $version == *-* ]] && prerelease=true
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >>"$GITHUB_OUTPUT"
+
+  ci:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+
+  binaries:
+    needs: [prepare, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Build
+        run: make dist VERSION=${{ needs.prepare.outputs.version }}
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/ntk-*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  docker:
+    needs: [prepare, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image tags
+        id: tags
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          image=ghcr.io/${GITHUB_REPOSITORY,,}
+          tags="$image:$VERSION"
+          [[ $PRERELEASE == false ]] && tags="$tags,$image:latest"
+          echo "tags=$tags" >>"$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: VERSION=${{ needs.prepare.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+  release:
+    needs: [prepare, binaries, docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Create the release and the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          scripts/release-notes.sh "$VERSION" >notes.md
+          flags=()
+          [[ $PRERELEASE == true ]] && flags+=(--prerelease)
+          gh release create "$VERSION" dist/* --target "$GITHUB_SHA" --title "ntk $VERSION" --notes-file notes.md "${flags[@]}"
+
+  sync-changelog:
+    needs: [prepare, release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: trunk
+          fetch-depth: 0
+      - name: Copy the changelog to trunk
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$GITHUB_SHA"
+          git checkout "$GITHUB_SHA" -- "changelog/$VERSION.md"
+          if git diff --cached --quiet; then
+            echo "changelog/$VERSION.md is already on trunk"
+            exit 0
+          fi
+          git commit -m "add changelog for $VERSION"
+          for _ in 1 2 3; do
+            git push origin HEAD:trunk && exit 0
+            git pull --rebase origin trunk
+          done
+          exit 1

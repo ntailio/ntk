@@ -1,0 +1,7 @@
+.git
+.github
+bin
+dist
+assets
+sandbox/certs
+*.test
