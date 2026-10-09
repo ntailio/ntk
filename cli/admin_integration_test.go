@@ -207,6 +207,9 @@ func TestBrokersAndCluster(t *testing.T) {
 
 func TestHealth(t *testing.T) {
 	e := newEnv(t, nil)
+	e.fails(exitcode.Usage, "health", "--checks", "bogus")
+	e.fails(exitcode.Usage, "health", "--checks", "quorum,urp")
+	e.fails(exitcode.Usage, "health", "--checks", "groups")
 	var r health.Report
 	out, _, code := e.run("health", "-o", "json")
 	if err := json.Unmarshal([]byte(out), &r); err != nil || len(r.Checks) < 10 || r.Brokers != 3 {

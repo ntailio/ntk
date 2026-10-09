@@ -6,6 +6,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -31,6 +32,14 @@ func (a *app) newHealthCmd() *cobra.Command {
 				return usageErr("%v", err)
 			}
 			o.Checks = splitList(checks)
+			for _, c := range o.Checks {
+				if c != "all" && !slices.Contains(health.AllChecks, c) {
+					return usageErr("unknown check %q (use all, or: %s)", c, strings.Join(health.AllChecks, ", "))
+				}
+				if c == "groups" && o.Groups == "" {
+					return usageErr("the groups check needs --groups <glob>")
+				}
+			}
 			s, err := a.session()
 			if err != nil {
 				return err
@@ -90,7 +99,7 @@ func (a *app) newHealthCmd() *cobra.Command {
 	f.StringVar(&failOn, "fail-on", "critical", "exit 5 at this level: warn or critical")
 	f.BoolVar(&watch, "watch", false, "re-run every --interval and print changes")
 	f.DurationVar(&interval, "interval", 10*time.Second, "with --watch: how often to check")
-	_ = cmd.RegisterFlagCompletionFunc("checks", cobra.FixedCompletions(health.AllChecks, cobra.ShellCompDirectiveNoFileComp))
+	_ = cmd.RegisterFlagCompletionFunc("checks", cobra.FixedCompletions(append([]string{"all"}, health.AllChecks...), cobra.ShellCompDirectiveNoFileComp))
 	_ = cmd.RegisterFlagCompletionFunc("fail-on", cobra.FixedCompletions([]string{"warn", "critical"}, cobra.ShellCompDirectiveNoFileComp))
 	return cmd
 }
