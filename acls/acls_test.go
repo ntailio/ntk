@@ -99,3 +99,25 @@ func TestParse(t *testing.T) {
 		t.Error("NormalizePrincipal")
 	}
 }
+
+func TestFilterTargeted(t *testing.T) {
+	broad := []Filter{
+		{},
+		{Pattern: "ANY"},
+		{Operation: "ANY"},
+		{ResourceType: "ANY"},
+		{Pattern: "MATCH"},
+		{Permission: "ALLOW"},
+		{ResourceType: "TOPIC", Operation: "READ", Host: "*"},
+	}
+	for _, f := range broad {
+		if f.Targeted() {
+			t.Errorf("%+v counts as targeted; it matches ACLs across the cluster", f)
+		}
+	}
+	for _, f := range []Filter{{Principal: "User:bob"}, {ResourceType: "TOPIC", Name: "orders"}, {Name: "kafka-cluster"}} {
+		if !f.Targeted() {
+			t.Errorf("%+v should count as targeted", f)
+		}
+	}
+}

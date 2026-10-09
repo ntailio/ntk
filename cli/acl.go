@@ -243,8 +243,8 @@ func (a *app) newACLDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if flt.Empty() {
-				return usageErr("refusing to delete every ACL: add a filter (--principal, --topic, ...)")
+			if !flt.Targeted() {
+				return usageErr("refusing to delete ACLs across the whole cluster: name a --principal or a resource (--topic, --group, --cluster, ...)")
 			}
 			s, err := a.session()
 			if err != nil {

@@ -141,7 +141,10 @@ type Filter struct {
 	Name         string
 }
 
-func (f Filter) Empty() bool { return f == Filter{} || f == Filter{Pattern: "ANY"} }
+// Targeted reports whether f names a principal or a resource. Anything else,
+// like --operation any or --permission allow on its own, matches ACLs across
+// the whole cluster.
+func (f Filter) Targeted() bool { return f.Principal != "" || f.Name != "" }
 
 func (f Filter) request() kmsg.DescribeACLsRequest {
 	r := kmsg.NewDescribeACLsRequest()
