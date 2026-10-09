@@ -342,3 +342,29 @@ func TestMonitoring(t *testing.T) {
 		t.Errorf("group watch emitted %d samples", n)
 	}
 }
+
+func TestDryRunChangesNothing(t *testing.T) {
+	e := newEnv(t, nil)
+	name := testkit.Topic(t, e.adm, "dry", 1)
+
+	contains(t, e.ok("p", name, "-k", "k", "-v", "v", "--dry-run"), "Produce 1 message")
+	contains(t, e.okIn("a\nb\nc\n", "p", name, "--dry-run"), "Produce 3 messages")
+	contains(t, e.ok("p", name, "--in", "unix:"+filepath.Join(t.TempDir(), "s.sock"), "--dry-run"), "Listen on")
+	if out, _, code := e.runIn("{not json\n", "p", name, "--in", "jsonl", "--dry-run"); code != exitcode.Usage {
+		t.Errorf("invalid jsonl in a dry run: exit %d, %s", code, out)
+	}
+	if got := lines(e.ok("c", name, "--from", "earliest")); len(got) != 0 {
+		t.Fatalf("dry-run produce wrote %d messages", len(got))
+	}
+
+	testkit.Produce(t, name, "one", "two")
+	group := testkit.Group(t, e.adm, "dry")
+	e.ok("c", name, "--from", "earliest", "-g", group, "-n", "2", "--dry-run")
+	offsets, err := e.adm.FetchOffsets(t.Context(), group)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := len(offsets.Sorted()); n != 0 {
+		t.Errorf("consume -g --dry-run committed %d offsets", n)
+	}
+}

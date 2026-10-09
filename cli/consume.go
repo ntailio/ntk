@@ -149,6 +149,9 @@ func (a *app) runConsume(cmd *cobra.Command, topicNames []string, f consumeFlags
 	if err != nil {
 		return usageErr("--from: %v", err)
 	}
+	if a.flags.dryRun && f.group != "" {
+		f.noCommit = true
+	}
 	o := consume.Options{Topics: topicNames, From: from, Limit: f.limit, Group: f.group, NoCommit: f.noCommit,
 		ReadCommit: f.isolation == "read_committed", Follow: f.follow || from.Kind == consume.Latest}
 	if f.until != "" {

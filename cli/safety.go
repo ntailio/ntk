@@ -63,11 +63,7 @@ func (a *app) run(ctx context.Context, s *session, pl *plan.Plan) error {
 		return nil
 	}
 	if a.flags.dryRun {
-		if a.flags.output == "json" {
-			return a.render(pl)
-		}
-		fmt.Fprintf(a.stdout, "%s (dry run)\n%s", a.badge(s), indentPlan(pl))
-		return nil
+		return a.showDryRun(s, pl)
 	}
 	if s.prof.ReadOnly {
 		return exitcode.With(exitcode.Refused, fmt.Errorf("refused: profile %q is read-only", s.name))
@@ -79,6 +75,14 @@ func (a *app) run(ctx context.Context, s *session, pl *plan.Plan) error {
 		return err
 	}
 	fmt.Fprintf(a.stderr, "✓ %s\n", strings.TrimSuffix(pl.Summary, ":"))
+	return nil
+}
+
+func (a *app) showDryRun(s *session, pl *plan.Plan) error {
+	if a.flags.output == "json" {
+		return a.render(pl)
+	}
+	fmt.Fprintf(a.stdout, "%s (dry run)\n%s", a.badge(s), indentPlan(pl))
 	return nil
 }
 

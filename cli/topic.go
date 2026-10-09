@@ -629,7 +629,15 @@ func (a *app) newTopicReassignCmd() *cobra.Command {
 			}
 			if len(running) == 0 {
 				fmt.Fprintln(a.stderr, "No reassignments in progress.")
-				if !s.prof.ReadOnly {
+				if a.flags.dryRun {
+					throttled, err := topics.ThrottledTopics(cmd.Context(), s.cl.Admin)
+					if err != nil {
+						return err
+					}
+					if len(throttled) > 0 {
+						fmt.Fprintf(a.stderr, "(dry run) would remove replication throttles from %s and all brokers.\n", strings.Join(throttled, ", "))
+					}
+				} else if !s.prof.ReadOnly {
 					cleared, err := topics.ClearThrottles(cmd.Context(), s.cl.Admin)
 					if err != nil {
 						return err

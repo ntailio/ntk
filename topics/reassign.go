@@ -280,11 +280,8 @@ func InProgress(ctx context.Context, adm *kadm.Client, topicNames []string) ([]R
 
 // ClearThrottles removes replication throttles once no reassignment is running.
 // It returns the topics it cleared.
-func ClearThrottles(ctx context.Context, adm *kadm.Client) ([]string, error) {
-	running, err := InProgress(ctx, adm, nil)
-	if err != nil || len(running) > 0 {
-		return nil, err
-	}
+// ThrottledTopics lists topics that still have replication throttles set.
+func ThrottledTopics(ctx context.Context, adm *kadm.Client) ([]string, error) {
 	rcs, err := adm.DescribeTopicConfigs(ctx)
 	if err != nil {
 		return nil, err
@@ -298,8 +295,17 @@ func ClearThrottles(ctx context.Context, adm *kadm.Client) ([]string, error) {
 			}
 		}
 	}
-	if len(throttled) == 0 {
-		return nil, nil
+	return throttled, nil
+}
+
+func ClearThrottles(ctx context.Context, adm *kadm.Client) ([]string, error) {
+	running, err := InProgress(ctx, adm, nil)
+	if err != nil || len(running) > 0 {
+		return nil, err
+	}
+	throttled, err := ThrottledTopics(ctx, adm)
+	if err != nil || len(throttled) == 0 {
+		return nil, err
 	}
 	var del []kadm.AlterConfig
 	for _, k := range throttleTopicKeys {

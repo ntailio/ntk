@@ -188,6 +188,8 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 		return usageErr("--idle-timeout only applies to --in unix:")
 	case f.limit > 0 && single:
 		return usageErr("-n applies to bulk input; use --count to repeat a message")
+	case f.interactive && a.flags.dryRun:
+		return usageErr("--dry-run can't preview the interactive composer")
 	}
 	if f.tombstone && (f.key == "" || fl.Changed("value")) {
 		return usageErr("--tombstone needs -k and no -v")
@@ -319,6 +321,9 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 		summary = "messages from " + from + " to " + topic
 	}
 
+	if a.flags.dryRun {
+		return a.dryRunProduce(cmd.Context(), s, src, topic, in, f)
+	}
 	if bulk && slices.Contains(s.prof.Labels, "prod") {
 		pl := &plan.Plan{Class: plan.Change, Summary: "Produce " + summary + ":", Changes: []string{"→ " + topic}}
 		if f.keepTopic {
@@ -401,6 +406,42 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 	return err
 }
 
+// dryRunProduce reads and validates the input without sending anything, then
+// shows what would be produced. A socket isn't bound, and --repeat isn't run.
+func (a *app) dryRunProduce(ctx context.Context, s *session, src produce.Source, topic string, in produceInput, f produceFlags) error {
+	pl := &plan.Plan{Class: plan.SafeWrite}
+	switch {
+	case src == nil:
+		pl.Summary = "Listen on " + in.path + ":"
+		pl.Changes = []string{"→ produce each datagram to " + topic}
+	case f.repeat:
+		pl.Summary = "Produce until interrupted:"
+		pl.Changes = []string{"→ " + topic}
+	default:
+		src = produce.Limit(src, f.limit)
+		var n, size int64
+		seen := map[string]bool{}
+		for {
+			r, err := src(ctx)
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if err != nil {
+				return usageErr("%v", err)
+			}
+			n++
+			size += int64(len(r.Key) + len(r.Value))
+			seen[r.Topic] = true
+		}
+		pl.Summary = fmt.Sprintf("Produce %s (%s):", units.Plural(n, "message"), units.Bytes(size))
+		pl.Changes = []string{"→ " + strings.Join(slices.Sorted(maps.Keys(seen)), ", ")}
+		if n == 0 {
+			pl.Changes = []string{"→ " + topic}
+		}
+	}
+	return a.showDryRun(s, pl)
+}
+
 func describeCleanup(ctx context.Context, s *session, topic string) (string, error) {
 	rcs, err := s.cl.Admin.DescribeTopicConfigs(ctx, topic)
 	if err != nil || len(rcs) == 0 {
@@ -468,9 +509,12 @@ func (a *app) copyTopic(cmd *cobra.Command, dst *session, topic string, f produc
 	if err != nil {
 		return err
 	}
+	p := &plan.Plan{Class: plan.Change, Summary: fmt.Sprintf("Copy messages from %s:%s to %s:", src.name, f.fromTopic, topic),
+		Changes: []string{fmt.Sprintf("%d partitions from %s", pl.Partitions(), f.from)}}
+	if a.flags.dryRun {
+		return a.showDryRun(dst, p)
+	}
 	if slices.Contains(dst.prof.Labels, "prod") {
-		p := &plan.Plan{Class: plan.Change, Summary: fmt.Sprintf("Copy messages from %s:%s to %s:", src.name, f.fromTopic, topic),
-			Changes: []string{fmt.Sprintf("%d partitions from %s", pl.Partitions(), f.from)}}
 		if err := a.confirmPlan(dst, p); err != nil {
 			return err
 		}
