@@ -5,7 +5,6 @@ package cli
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -14,31 +13,12 @@ import (
 	"github.com/ntailio/ntk/units"
 )
 
-// parseIDs parses "0,3-5" into [0 3 4 5].
 func parseIDs(s string) ([]int32, error) {
-	if s == "" {
-		return nil, nil
+	ids, err := units.ParseIDList(s)
+	if err != nil {
+		return nil, exitcode.With(exitcode.Usage, err)
 	}
-	var out []int32
-	for _, part := range strings.Split(s, ",") {
-		part = strings.TrimSpace(part)
-		lo, hi, isRange := strings.Cut(part, "-")
-		a, err := strconv.Atoi(lo)
-		if err != nil {
-			return nil, exitcode.With(exitcode.Usage, fmt.Errorf("invalid id list %q", s))
-		}
-		b := a
-		if isRange {
-			if b, err = strconv.Atoi(hi); err != nil || b < a {
-				return nil, exitcode.With(exitcode.Usage, fmt.Errorf("invalid range %q", part))
-			}
-		}
-		for i := a; i <= b; i++ {
-			out = append(out, int32(i))
-		}
-	}
-	slices.Sort(out)
-	return slices.Compact(out), nil
+	return ids, nil
 }
 
 // parseTopicPartitions parses "orders:0,3-5" into ("orders", [0 3 4 5]).

@@ -114,15 +114,17 @@ func resetForm(m *model, group, topic string) tea.Cmd {
 		if topic == "" {
 			o.AllTopics = true
 		} else {
-			name, parts, _ := strings.Cut(topic, ":")
-			o.Topics[name] = nil
-			if parts != "" {
-				for _, p := range strings.Split(parts, ",") {
-					if n, err := strconv.Atoi(strings.TrimSpace(p)); err == nil {
-						o.Topics[name] = append(o.Topics[name], int32(n))
-					}
-				}
+			name, parts, _ := strings.Cut(strings.TrimSpace(topic), ":")
+			if name == "" {
+				m.flash("enter a topic name, like orders or orders:0,3-5; nothing changed", true)
+				return nil
 			}
+			ids, err := units.ParseIDList(parts)
+			if err != nil {
+				m.flash(err.Error()+"; nothing changed", true)
+				return nil
+			}
+			o.Topics[name] = ids
 		}
 		switch o.Mode {
 		case groups.ToOffset:

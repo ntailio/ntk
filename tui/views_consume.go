@@ -396,14 +396,20 @@ func (v *consumeView) restartForm(m *model) tea.Cmd {
 	}
 	f := huh.NewForm(huh.NewGroup(
 		huh.NewInput().Title("Start from").Description("latest, earliest, -N per partition, @offset, a time, -1h").Value(&from),
-		huh.NewInput().Title("Partition").Description("empty = all partitions").Value(&part),
+		huh.NewInput().Title("Partition").Description("one partition number, or empty for all").Value(&part),
 	))
 	return m.openForm("Consume "+v.topic, f, func(m *model) tea.Cmd {
-		v.close()
-		v.from, v.partition = from, -1
-		if n, err := strconv.Atoi(strings.TrimSpace(part)); err == nil {
-			v.partition = int32(n)
+		p := int32(-1)
+		if part = strings.TrimSpace(part); part != "" {
+			n, err := strconv.Atoi(part)
+			if err != nil || n < 0 {
+				m.flash(fmt.Sprintf("partition %q is not a single partition number", part), true)
+				return nil
+			}
+			p = int32(n)
 		}
+		v.close()
+		v.from, v.partition = from, p
 		v.recs, v.total, v.finished, v.err, v.loaded = nil, 0, false, nil, false
 		return v.load(m)
 	})

@@ -4,6 +4,7 @@
 package units
 
 import (
+	"slices"
 	"testing"
 	"time"
 )
@@ -64,5 +65,26 @@ func TestFormat(t *testing.T) {
 	}
 	if Count(1234567) != "1,234,567" || Count(-1204) != "-1,204" || Count(12) != "12" {
 		t.Errorf("count: %s %s", Count(1234567), Count(-1204))
+	}
+}
+
+func TestParseIDList(t *testing.T) {
+	for in, want := range map[string][]int32{
+		"":          nil,
+		"3":         {3},
+		"5,0,3-4,4": {0, 3, 4, 5},
+		"0, 3-5":    {0, 3, 4, 5},
+		"3-5":       {3, 4, 5},
+		"7-7":       {7},
+	} {
+		got, err := ParseIDList(in)
+		if err != nil || !slices.Equal(got, want) {
+			t.Errorf("ParseIDList(%q) = %v, %v; want %v", in, got, err, want)
+		}
+	}
+	for _, bad := range []string{"x", "3-", "5-3", "1,,2", "-1", "a-b"} {
+		if _, err := ParseIDList(bad); err == nil {
+			t.Errorf("ParseIDList(%q): expected an error", bad)
+		}
 	}
 }

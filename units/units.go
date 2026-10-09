@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -195,4 +196,31 @@ func Plural(n int64, word string) string {
 		return "1 " + word
 	}
 	return Count(n) + " " + word + "s"
+}
+
+// ParseIDList parses an id list like "0,3-5" into [0 3 4 5], sorted and without duplicates.
+func ParseIDList(s string) ([]int32, error) {
+	if s == "" {
+		return nil, nil
+	}
+	var out []int32
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		lo, hi, isRange := strings.Cut(part, "-")
+		a, err := strconv.Atoi(lo)
+		if err != nil || a < 0 {
+			return nil, fmt.Errorf("invalid id list %q", s)
+		}
+		b := a
+		if isRange {
+			if b, err = strconv.Atoi(hi); err != nil || b < a {
+				return nil, fmt.Errorf("invalid range %q", part)
+			}
+		}
+		for i := a; i <= b; i++ {
+			out = append(out, int32(i))
+		}
+	}
+	slices.Sort(out)
+	return slices.Compact(out), nil
 }
