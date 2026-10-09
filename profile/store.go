@@ -163,6 +163,11 @@ func LoadOrEmpty(path string) (*Store, error) {
 
 func (s *Store) Save() error {
 	s.File.Version = CurrentVersion
+	for _, name := range s.Names() {
+		if p := s.File.Profiles[name]; p.Color == "" {
+			p.Color = s.File.NextColor()
+		}
+	}
 	b, err := s.marshal()
 	if err != nil {
 		return err

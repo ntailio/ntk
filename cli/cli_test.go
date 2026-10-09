@@ -8,12 +8,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 
 	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/profile"
 )
 
 const testProfiles = `{
@@ -215,5 +217,38 @@ func TestParseIDs(t *testing.T) {
 		if _, err := parseIDs(bad); err == nil {
 			t.Errorf("%q: expected an error", bad)
 		}
+	}
+}
+
+func TestProfileColors(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "profiles.json")
+	for _, name := range []string{"one", "two"} {
+		if _, errOut, code := runWith(t, path, "profile", "create", name, "--bootstrap", "localhost:1", "--no-test"); code != 0 {
+			t.Fatalf("create %s: %d %s", name, code, errOut)
+		}
+	}
+	if _, errOut, code := runWith(t, path, "profile", "copy", "one", "three"); code != 0 {
+		t.Fatalf("copy: %d %s", code, errOut)
+	}
+	s, err := profile.Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]string{}
+	for _, name := range []string{"one", "two", "three"} {
+		c := s.File.Profiles[name].Color
+		if !slices.Contains(profile.Palette, c) {
+			t.Errorf("%s: colour %q isn't from the palette", name, c)
+		}
+		if other, dup := seen[c]; dup {
+			t.Errorf("%s and %s share colour %s", name, other, c)
+		}
+		seen[c] = name
+	}
+	if _, _, code := runWith(t, path, "profile", "create", "bad", "--bootstrap", "localhost:1", "--no-test", "--color", "purple"); code != exitcode.Usage {
+		t.Errorf("an invalid colour: exit %d, want %d", code, exitcode.Usage)
+	}
+	if _, errOut, code := runWith(t, path, "profile", "create", "named", "--bootstrap", "localhost:1", "--no-test", "--color", "red"); code != 0 {
+		t.Errorf("a named colour: %d %s", code, errOut)
 	}
 }

@@ -225,7 +225,7 @@ func (a *app) newProfileCreateCmd() *cobra.Command {
 	f.BoolVar(&passwordStdin, "password-stdin", false, "read the SASL password from stdin")
 	f.StringVar(&in.principal, "principal", "", "expected principal, e.g. User:bob")
 	f.BoolVar(&in.readOnly, "read-only", false, "refuse all write operations with this profile")
-	f.StringVar(&in.color, "color", "", "badge color: green, yellow, red, blue, magenta, or #hex")
+	f.StringVar(&in.color, "color", "", "badge colour: a hex like #ff00ee, or red, green, yellow, blue, magenta, cyan (default: one no other profile uses)")
 	f.StringVar(&in.deletion, "deletion-prevention", "", "destructive commands: always (refuse), prompt (ask first; default), or never")
 	f.BoolVar(&activate, "activate", false, "make the new profile active")
 	f.BoolVar(&noTest, "no-test", false, "skip the connection test")
@@ -324,10 +324,6 @@ func (a *app) profileWizard(ctx context.Context, s *profile.Store, in *profileIn
 			Value(&in.principal),
 		huh.NewConfirm().Title("Read-only?").Description("refuse all write operations with this profile").
 			Value(&in.readOnly),
-		huh.NewSelect[string]().Title("Badge color").Options(
-			huh.NewOption("none", ""), huh.NewOption("green", "green"), huh.NewOption("yellow", "yellow"),
-			huh.NewOption("red", "red"), huh.NewOption("blue", "blue"), huh.NewOption("magenta", "magenta"),
-		).Value(&in.color),
 		huh.NewSelect[string]().Title("Deletion prevention").Description("what happens with destructive commands like topic delete").
 			Options(huh.NewOption("prompt: ask first", ""), huh.NewOption("always: refuse them", profile.DeletionAlways),
 				huh.NewOption("never: just run them", profile.DeletionNever)).

@@ -10,6 +10,7 @@ import (
 	"net"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -151,6 +152,9 @@ func (p *Profile) Deletion() string {
 
 func (p *Profile) Validate() error {
 	var errs []error
+	if p.Color != "" && !ValidColor(p.Color) {
+		errs = append(errs, fmt.Errorf("color: %q must be a hex colour like #ff00ee, or one of %s", p.Color, strings.Join(NamedColors, ", ")))
+	}
 	switch p.DeletionPrevention {
 	case "", DeletionAlways, DeletionPrompt, DeletionNever:
 	default:

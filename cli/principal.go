@@ -211,7 +211,7 @@ func (a *app) saveUserProfile(base, user, mech, pw string) error {
 	}
 	p := *b
 	p.Auth = profile.Auth{Mechanism: strings.ToLower(mech), Username: user, Password: pw}
-	p.Principal, p.Description = "", fmt.Sprintf("%s as User:%s", base, user)
+	p.Principal, p.Description, p.Color = "", fmt.Sprintf("%s as User:%s", base, user), ""
 	name := base + "-" + user
 	st.File.Profiles[name] = &p
 	if err := st.Save(); err != nil {

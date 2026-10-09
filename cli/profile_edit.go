@@ -218,6 +218,9 @@ func (a *app) newProfileRenameCmd(copyOnly bool) *cobra.Command {
 				return usageErr("profile %q already exists", args[1])
 			}
 			cp := *p
+			if copyOnly {
+				cp.Color = ""
+			}
 			s.File.Profiles[args[1]] = &cp
 			s.RenameUnknown(src, args[1], copyOnly)
 			if !copyOnly {
