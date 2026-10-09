@@ -5,7 +5,7 @@ Thanks for your interest in ntk! This page explains how you can help, and what w
 ## The short version
 
 - **Bug reports and feature ideas: yes, please.** Open an issue on GitHub.
-- **Pull requests: not at the moment.** ntk is developed by Factual Tech AB and we don't accept external code contributions. PRs will be closed, with thanks, without review.
+- **Pull requests: not at the moment.** ntk is developed and maintained by the [ntail](https://ntail.io) team at Factual Tech AB, and we don't accept external code contributions. PRs will be closed, with thanks, without review.
 
 We know that's unusual for an open-source project. ntk is small, moves quickly, and is built from a [design spec](spec/README.md) that we keep in step with the code. Taking on outside changes would mean reviewing, maintaining and supporting them, and we'd rather spend that time making the tool good. This may change later.
 
@@ -21,8 +21,6 @@ Open an issue and include:
 4. Your Kafka version, if you know it, and whether it's KRaft or ZooKeeper.
 
 If you can reproduce it on the sandbox cluster in this repo (`docker compose up -d --wait`), say so; those are the quickest to fix.
-
-Found a security problem? Please don't open a public issue. Contact the maintainers at Factual Tech AB privately instead, and we'll get back to you.
 
 ## Suggesting a feature
 

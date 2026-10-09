@@ -18,6 +18,11 @@
     <a href="#contributing">Contributing</a>
     ·
     <a href="#status-and-roadmap">Status</a>
+    ·
+    <a href="https://ntail.io">ntail.io</a>
+  </p>
+  <p align="center">
+    Built by <a href="https://ntail.io"><b>ntail</b></a>, serverless Kafka without the bandwidth bill. <a href="https://console.ntail.io/signup">Free tier</a>, no card required.
   </p>
 </p>
 
@@ -44,6 +49,12 @@ A few ideas run through the whole tool:
 - **The TUI is the CLI.** Every view in the terminal UI runs the same code as the command line, and will tell you the command it ran.
 
 ntk is a single static Go binary with no JVM and no librdkafka. It sends no telemetry.
+
+## Built by ntail
+
+ntk is made and maintained by the team behind [ntail](https://ntail.io), serverless Kafka without the bandwidth bill: nothing to size, no fees for public internet traffic, encrypted by default, and run on our own infrastructure in the EU rather than rented from a hyperscaler. Standard Kafka clients and tooling work unchanged, and so does ntk; it's the cluster we build ntk against, but it works with any Kafka.
+
+If you need somewhere to point it at, ntail has a [free tier](https://console.ntail.io/signup) with no card required, and `ntk profile create` does the rest.
 
 ## Install
 
@@ -145,4 +156,4 @@ Profiles can be read-only, coloured, and labelled `prod`. Destructive commands s
 
 ## License
 
-ntk is released under the [Apache License 2.0](LICENSE). Copyright Factual Tech AB.
+ntk is released under the [Apache License 2.0](LICENSE). Copyright [Factual Tech AB](https://ntail.io), the company behind [ntail](https://ntail.io), serverless Kafka.
