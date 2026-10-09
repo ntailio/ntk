@@ -155,7 +155,7 @@ func (a *app) newRootCmd() *cobra.Command {
 }
 
 // enablePickers makes commands that take a resource name open a fuzzy picker
-// when the name is missing and ntk runs in a terminal (spec/cli-conventions.md#interactive-fallbacks).
+// when the name is missing and ntk runs in a terminal.
 func (a *app) enablePickers(c *cobra.Command) {
 	for _, sub := range c.Commands() {
 		a.enablePickers(sub)

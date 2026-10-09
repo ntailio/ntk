@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package record encodes Kafka records as the consume metadata line and the
-// lossless jsonl "ntk record format" (spec/features/consuming.md#output).
+// lossless jsonl "ntk record format".
 package record
 
 import (

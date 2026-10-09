@@ -48,7 +48,7 @@ func newConsumerClient(s *session, opts ...kgo.Opt) (*kafka.Client, error) {
 
 func (s *session) Close() { s.cl.Close() }
 
-// run shows, confirms, and applies a plan, following spec/cli-conventions.md#safety.
+// run shows, confirms, and applies a plan.
 func (a *app) run(ctx context.Context, s *session, pl *plan.Plan) error {
 	pl.Profile = s.name
 	if pl.ClusterID == "" {

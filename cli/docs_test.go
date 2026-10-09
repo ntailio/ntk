@@ -21,18 +21,16 @@ import (
 var fence = regexp.MustCompile("(?s)```[a-z]*\n(.*?)```")
 
 // TestDocCommands checks that every `ntk …` command in a code block of the
-// README, the guide, and the spec exists, with the flags it uses.
+// README and the guide exists, with the flags it uses.
 func TestDocCommands(t *testing.T) {
 	root := testkit.RepoRoot(t)
 	files := []string{filepath.Join(root, "README.md")}
-	for _, dir := range []string{"docs", "spec"} {
-		_ = filepath.WalkDir(filepath.Join(root, dir), func(p string, d os.DirEntry, err error) error {
-			if err == nil && strings.HasSuffix(p, ".md") {
-				files = append(files, p)
-			}
-			return err
-		})
-	}
+	_ = filepath.WalkDir(filepath.Join(root, "docs"), func(p string, d os.DirEntry, err error) error {
+		if err == nil && strings.HasSuffix(p, ".md") {
+			files = append(files, p)
+		}
+		return err
+	})
 
 	cmd := (&app{}).newRootCmd()
 	cmd.InitDefaultHelpCmd()

@@ -1,7 +1,7 @@
 // Copyright 2026 Factual Tech AB
 // SPDX-License-Identifier: Apache-2.0
 
-// Package sink implements consume output targets (spec/features/consuming.md#output).
+// Package sink implements consume output targets.
 package sink
 
 import (

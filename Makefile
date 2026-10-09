@@ -53,7 +53,7 @@ release-branch: ## Cut release/$(VERSION) from trunk with a changelog template (
 	@test "$(origin VERSION)" = "command line" || { echo "usage: make release-branch VERSION=v1.2.3"; exit 2; }
 	scripts/release-branch.sh $(VERSION)
 
-sandbox-up: ## Start the sandbox cluster (spec/testing.md)
+sandbox-up: ## Start the sandbox cluster
 	docker compose up -d --wait
 
 sandbox-down: ## Stop the sandbox, keep data

@@ -414,7 +414,7 @@ func Resolve(ops []Op, entries []Entry) ([]kadm.AlterConfig, error) {
 	return out, errors.Join(errs...)
 }
 
-// Warnings flags risky changes (spec/features/topic-config.md#safety).
+// Warnings flags risky changes.
 func Warnings(ops []kadm.AlterConfig, entries []Entry) []string {
 	var w []string
 	for _, o := range ops {

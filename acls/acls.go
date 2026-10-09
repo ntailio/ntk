@@ -319,7 +319,7 @@ func Apply(ctx context.Context, cl *kgo.Client, pl *plan.Plan) error {
 	return nil
 }
 
-// Recipe builds the ACLs for a common role (spec/features/acls.md#recipes).
+// Recipe builds the ACLs for a common role.
 type RecipeArgs struct {
 	Principal string
 	Host      string

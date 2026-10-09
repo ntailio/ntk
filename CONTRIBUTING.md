@@ -7,7 +7,7 @@ Thanks for your interest in ntk! This page explains how you can help, and what w
 - **Bug reports and feature ideas: yes, please.** Open an issue on GitHub.
 - **Pull requests: not at the moment.** ntk is developed and maintained by the [ntail](https://ntail.io) team at Factual Tech AB, and we don't accept external code contributions. PRs will be closed, with thanks, without review.
 
-We know that's unusual for an open-source project. ntk is small, moves quickly, and is built from a [design spec](spec/README.md) that we keep in step with the code. Taking on outside changes would mean reviewing, maintaining and supporting them, and we'd rather spend that time making the tool good. This may change later.
+We know that's unusual for an open-source project. ntk is small and moves quickly. Taking on outside changes would mean reviewing, maintaining and supporting them, and we'd rather spend that time making the tool good. This may change later.
 
 Everything in this repository is Apache 2.0, so you're free to fork, patch and ship your own build.
 
@@ -26,7 +26,7 @@ If you can reproduce it on the sandbox cluster in this repo (`docker compose up 
 
 Open an issue and tell us the problem you're trying to solve, not only the flag you'd like. "I need to copy a day of traffic into staging without the timestamps" is easier to act on than "add `--no-timestamps`". If ntk does something close already, mention what falls short.
 
-Some things are deliberately out of scope, so check the [roadmap](spec/roadmap.md) first. Message decoding and Schema Registry support, for example, aren't planned: ntk treats messages as bytes, on purpose.
+Some things are deliberately out of scope. Message decoding and Schema Registry support, for example, aren't planned: ntk treats messages as bytes, on purpose.
 
 ## Questions and feedback
 

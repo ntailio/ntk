@@ -34,7 +34,7 @@ func cacheDir() string {
 }
 
 // cached returns completion items ("name\tdescription") for kind, from a
-// short-lived per-profile cache or the cluster (spec/completion.md#behavior).
+// short-lived per-profile cache or the cluster.
 func (a *app) cached(ctx context.Context, kind string, fetch fetchFunc) []string {
 	p, err := prefs.Load()
 	if err != nil || !p.CompletionEnabled() {

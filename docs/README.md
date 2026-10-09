@@ -14,5 +14,3 @@ New here? [Download the latest release](https://github.com/ntailio/ntk/releases/
 8. [Monitoring](monitoring.md): watch, top, lag checks, health
 9. [Access control](access.md): ACLs, SCRAM users, quotas
 10. [The TUI](tui.md): keys and views
-
-Looking for the exact behaviour of every flag and output field? That's in the [spec](../spec/README.md).

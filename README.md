@@ -108,7 +108,7 @@ The [guide](docs/README.md) is a set of short chapters:
 [Access control](docs/access.md) ·
 [The TUI](docs/tui.md)
 
-Every command has `--help`, and `ntk help <command>` works too. The exact behaviour of every flag and output field is written down in the [spec](spec/README.md), which is what ntk is built from.
+Every command has `--help`, and `ntk help <command>` works too.
 
 ## Contributing
 
@@ -116,7 +116,7 @@ Bug reports and feature ideas are very welcome as GitHub issues. ntk doesn't acc
 
 ## Status and Roadmap
 
-ntk is young and under active development. It's in use against real clusters, and the command surface described in the spec is implemented and tested against the sandbox on every change. Expect occasional breaking changes to flags until a 1.0.
+ntk is young and under active development. It's in use against real clusters, and every command is tested against a real 3-broker cluster on every change. Expect occasional breaking changes to flags until a 1.0.
 
 | Area | Status |
 |---|---|
@@ -130,7 +130,7 @@ ntk is young and under active development. It's in use against real clusters, an
 | Auth: PLAINTEXT, TLS, mTLS, SASL PLAIN, SCRAM-SHA-256/512 | ✅ |
 | Auth: OAUTHBEARER, AWS MSK IAM, Kerberos | ❌ |
 
-Message decoding and Schema Registry support are intentionally not on the roadmap. The full list of deferred features is in the [roadmap](spec/roadmap.md).
+Message decoding and Schema Registry support are intentionally not on the roadmap.
 
 ### Mirroring with a socket
 
