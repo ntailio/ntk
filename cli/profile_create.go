@@ -39,7 +39,6 @@ type profileInput struct {
 	principal   string
 	readOnly    bool
 	color       string
-	labels      string
 }
 
 const (
@@ -65,7 +64,6 @@ func (in *profileInput) build() (*profile.Profile, error) {
 		Principal:        in.principal,
 		ReadOnly:         in.readOnly,
 		Color:            in.color,
-		Labels:           splitList(in.labels),
 		Auth:             profile.Auth{Mechanism: "none"},
 	}
 	if in.usesTLS() {
@@ -226,7 +224,6 @@ func (a *app) newProfileCreateCmd() *cobra.Command {
 	f.StringVar(&in.principal, "principal", "", "expected principal, e.g. User:bob")
 	f.BoolVar(&in.readOnly, "read-only", false, "refuse all write operations with this profile")
 	f.StringVar(&in.color, "color", "", "badge color: green, yellow, red, blue, magenta, or #hex")
-	f.StringVar(&in.labels, "labels", "", `comma-separated labels ("prod" makes confirmations stricter)`)
 	f.BoolVar(&activate, "activate", false, "make the new profile active")
 	f.BoolVar(&noTest, "no-test", false, "skip the connection test")
 	f.StringVar(&properties, "from-properties", "", "import a Java client properties file (bootstrap, security, SASL, PEM stores)")
@@ -327,9 +324,7 @@ func (a *app) profileWizard(ctx context.Context, s *profile.Store, in *profileIn
 		huh.NewSelect[string]().Title("Badge color").Options(
 			huh.NewOption("none", ""), huh.NewOption("green", "green"), huh.NewOption("yellow", "yellow"),
 			huh.NewOption("red", "red"), huh.NewOption("blue", "blue"), huh.NewOption("magenta", "magenta"),
-		).Value(&in.color),
-		huh.NewInput().Title("Labels").Description(`optional, comma-separated; "prod" makes confirmations stricter`).
-			Value(&in.labels))
+		).Value(&in.color))
 	return a.runForm(ctx, huh.NewForm(huh.NewGroup(fields...)))
 }
 

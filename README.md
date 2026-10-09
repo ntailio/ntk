@@ -45,7 +45,7 @@ ntk is the tool you reach for when you need to look at a Kafka cluster, right no
 
 A few ideas run through the whole tool:
 
-- **Profiles, not flags.** Connection details live in one file, with PLAINTEXT, TLS, mTLS, SASL PLAIN and SCRAM. `ntk -p prod` is the whole incantation, and a read-only or `prod`-labelled profile makes mistakes hard.
+- **Profiles, not flags.** Connection details live in one file, with PLAINTEXT, TLS, mTLS, SASL PLAIN and SCRAM. `ntk -p prod` is the whole incantation, and a read-only profile makes mistakes hard.
 - **Bytes in, bytes out.** ntk never decodes, re-encodes or pretty-prints a message. What it gives you is what's in the log. For JSON, Avro or anything else, pipe it to the tool that understands it, or run one per message with `-o 'exec:jq .'`.
 - **A plan before every change.** Creating, deleting, resetting, granting: you see the exact effect first. `--dry-run` works on every mutating command, and a saved plan can be applied later.
 - **Watch without agents.** Throughput, lag, time lag and stuck consumers are computed from offsets, so monitoring works on any cluster, with nothing installed on the brokers.
@@ -165,7 +165,7 @@ ntk consume orders --from -1h -o 'exec:jq -c "select(.status == \"FAILED\")"'
 
 ![profiles: a staged connection test and a read-only profile refusing a delete](assets/demos/profiles.gif)
 
-Profiles can be read-only, coloured, and labelled `prod`. Destructive commands show a plan and, on prod, require you to type the resource name even with `-y`. `ntk profile test` checks DNS, TCP, TLS, SASL and metadata one step at a time and tells you which one broke.
+Profiles can be read-only, and destructive commands show a plan before anything happens. `ntk profile test` checks DNS, TCP, TLS, SASL and metadata one step at a time and tells you which one broke.
 
 ## License
 

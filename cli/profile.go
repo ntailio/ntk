@@ -42,7 +42,6 @@ type profileRow struct {
 	SecurityProtocol string   `json:"security_protocol"`
 	MTLS             bool     `json:"mtls"`
 	ReadOnly         bool     `json:"read_only"`
-	Labels           []string `json:"labels,omitempty"`
 }
 
 type profileRows []profileRow
@@ -77,7 +76,6 @@ func (r profileRows) Rows(wide bool) [][]string {
 		if p.ReadOnly {
 			flags = append(flags, "read-only")
 		}
-		flags = append(flags, p.Labels...)
 		row := []string{marker, p.Name, bootstrap, p.Auth, tls, strings.Join(flags, ", ")}
 		if wide {
 			row = append(row, p.Description)
@@ -118,7 +116,6 @@ func (a *app) newProfileListCmd() *cobra.Command {
 					SecurityProtocol: p.SecurityProtocol(),
 					MTLS:             p.TLS.HasClientCert(),
 					ReadOnly:         p.ReadOnly,
-					Labels:           p.Labels,
 				})
 			}
 			return a.render(rows)

@@ -24,7 +24,7 @@ import (
 func inputFromProfile(name string, p *profile.Profile) profileInput {
 	in := profileInput{
 		name: name, description: p.Description, bootstrap: strings.Join(p.BootstrapServers, ","), principal: p.Principal,
-		readOnly: p.ReadOnly, color: p.Color, labels: strings.Join(p.Labels, ","),
+		readOnly: p.ReadOnly, color: p.Color,
 		mechanism: p.Auth.Mechanism, username: p.Auth.Username, password: p.Auth.Password, security: secPlaintext,
 	}
 	if in.mechanism == "none" || in.mechanism == "" {
@@ -130,7 +130,7 @@ func applySets(p *profile.Profile, sets []string) (*profile.Profile, error) {
 		switch {
 		case val == "":
 			delete(cur, last)
-		case last == "bootstrap_servers" || last == "labels":
+		case last == "bootstrap_servers":
 			var list []any
 			for _, v := range splitList(val) {
 				list = append(list, v)

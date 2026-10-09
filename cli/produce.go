@@ -247,7 +247,7 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 
 	manual := f.keepPartition
 	var src produce.Source
-	bulk, summary := false, ""
+	bulk := false
 	if single {
 		k, err := readArg(f.key, a.stdin)
 		if err != nil {
@@ -294,7 +294,6 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 			src = produce.Single(&base, count)
 		}
 		bulk = count != 1
-		summary = fmt.Sprintf("%d message(s)", count)
 	} else {
 		bulk = true
 		var r io.Reader = a.stdin
@@ -338,28 +337,10 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 		if from == "stdin" {
 			src = produce.UntilCancel(src)
 		}
-		summary = "messages from " + from + " to " + topic
 	}
 
 	if a.flags.dryRun {
 		return a.dryRunProduce(cmd.Context(), s, src, topic, in, f)
-	}
-	if bulk && slices.Contains(s.prof.Labels, "prod") {
-		pl := &plan.Plan{Class: plan.Change, Summary: "Produce " + summary + ":", Changes: []string{"→ " + topic}}
-		if f.keepTopic {
-			pl.Changes = []string{"→ each record's original topic"}
-		}
-		if err := a.confirmPlan(s, pl); err != nil {
-			return err
-		}
-	}
-	if f.tombstone {
-		if d, err := describeCleanup(cmd.Context(), s, topic); err == nil && strings.Contains(d, "compact") && slices.Contains(s.prof.Labels, "prod") {
-			pl := &plan.Plan{Class: plan.Change, Summary: "Delete key from compacted topic:", Changes: []string{fmt.Sprintf("- %s key=%q", topic, f.key)}}
-			if err := a.confirmPlan(s, pl); err != nil {
-				return err
-			}
-		}
 	}
 
 	opts, err := produce.ClientOptions(f.opts, manual)
@@ -471,19 +452,6 @@ func (a *app) dryRunProduce(ctx context.Context, s *session, src produce.Source,
 	return a.showDryRun(s, pl)
 }
 
-func describeCleanup(ctx context.Context, s *session, topic string) (string, error) {
-	rcs, err := s.cl.Admin.DescribeTopicConfigs(ctx, topic)
-	if err != nil || len(rcs) == 0 {
-		return "", err
-	}
-	for _, c := range rcs[0].Configs {
-		if c.Key == "cleanup.policy" {
-			return c.MaybeValue(), nil
-		}
-	}
-	return "", nil
-}
-
 type copySink struct {
 	cl    *kgo.Client
 	topic string
@@ -542,11 +510,6 @@ func (a *app) copyTopic(cmd *cobra.Command, dst *session, topic string, f produc
 		Changes: []string{fmt.Sprintf("%d partitions from %s", pl.Partitions(), f.from)}}
 	if a.flags.dryRun {
 		return a.showDryRun(dst, p)
-	}
-	if slices.Contains(dst.prof.Labels, "prod") {
-		if err := a.confirmPlan(dst, p); err != nil {
-			return err
-		}
 	}
 	consumer, err := newConsumerClient(src, consume.ClientOptions(pl, o)...)
 	if err != nil {

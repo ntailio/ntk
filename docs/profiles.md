@@ -42,15 +42,11 @@ export NTK_PROFILE=prod       # for a whole shell session
 
 ## Keep production safe
 
-Two fields in a profile change how ntk behaves:
-
 - **`read_only: true`** refuses every write. Good for the profile you use to look at prod.
-- **label `prod`** makes destructive commands ask you to type the resource name, even with `-y`. The profile's colour also shows in every prompt and in the TUI header.
 
 ```sh
 ntk profile copy prod prod-admin          # a second profile for the rare write
 ntk profile edit prod --set read_only=true
-ntk profile edit prod --set labels=prod --set color=red
 ```
 
 ## Where the file lives

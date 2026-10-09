@@ -235,9 +235,9 @@ func newProfilesView(m *model) view {
 			if name == m.profileName {
 				marker = "*"
 			}
-			flags := strings.Join(p.Labels, ",")
+			flags := ""
 			if p.ReadOnly {
-				flags = strings.Trim("read-only,"+flags, ",")
+				flags = "read-only"
 			}
 			rows = append(rows, row{cells: []string{name, marker, p.BootstrapServers[0], p.Auth.Mechanism, p.SecurityProtocol(), dash(flags), p.Description}})
 		}

@@ -75,4 +75,4 @@ SCRAM mechanisms, quotas, ACLs, and a plain-language summary of what the princip
 
 ## Safety
 
-ACL and user changes show a plan and ask first. Deleting ACLs that would lock *you* out gets an extra warning, and `prod`-labelled profiles require typing the principal name.
+ACL and user changes show a plan and ask first. Deleting ACLs that would lock *you* out gets an extra warning.

@@ -22,7 +22,7 @@ const testProfiles = `{
   "profiles": {
     "dev":  {"bootstrap_servers": ["localhost:1"], "auth": {"mechanism": "none"}},
     "prod": {"bootstrap_servers": ["kafka:9093"], "auth": {"mechanism": "scram-sha-512", "username": "u", "password": "s3cret"},
-             "read_only": true, "labels": ["prod"]}
+             "read_only": true}
   }
 }`
 
@@ -160,12 +160,12 @@ func TestFromProperties(t *testing.T) {
 func TestProfileEditSet(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "profiles.json")
 	os.WriteFile(path, []byte(testProfiles), 0o600)
-	if _, errOut, code := runWith(t, path, "profile", "edit", "dev", "--set", "read_only=true", "--set", "labels=a,b", "--set", "auth.mechanism=plain",
+	if _, errOut, code := runWith(t, path, "profile", "edit", "dev", "--set", "read_only=true", "--set", "auth.mechanism=plain",
 		"--set", "auth.username=u", "--set", "auth.password=p", "--set", "bootstrap_servers=h1:1,h2:2"); code != 0 {
 		t.Fatalf("edit: %d %s", code, errOut)
 	}
 	out, _, _ := runWith(t, path, "profile", "show", "dev", "--reveal")
-	for _, want := range []string{`"read_only": true`, `"a"`, `"plain"`, `"h2:2"`} {
+	for _, want := range []string{`"read_only": true`, `"plain"`, `"h2:2"`} {
 		if !strings.Contains(out, want) {
 			t.Errorf("show after edit missing %s:\n%s", want, out)
 		}

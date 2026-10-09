@@ -148,20 +148,13 @@ func TestSavedPlanApply(t *testing.T) {
 
 func TestSafetyRules(t *testing.T) {
 	ro := map[string]any{"bootstrap_servers": testkit.Bootstrap(), "auth": map[string]any{"mechanism": "none"}, "read_only": true}
-	prod := map[string]any{"bootstrap_servers": testkit.Bootstrap(), "auth": map[string]any{"mechanism": "none"}, "labels": []string{"prod"}}
-	e := newEnv(t, map[string]any{"ro": ro, "prod": prod})
+	e := newEnv(t, map[string]any{"ro": ro})
 	name := testkit.Topic(t, e.adm, "safe", 1)
 
 	_, errOut := e.fails(exitcode.Refused, "-p", "ro", "topic", "delete", name, "-y")
 	contains(t, errOut, "read-only")
 	e.fails(exitcode.Refused, "-p", "ro", "topic", "create", testkit.Name(t, "ro"))
 	e.ok("-p", "ro", "topic", "describe", name)
-
-	_, errOut = e.fails(exitcode.Usage, "-p", "prod", "topic", "delete", name, "-y")
-	contains(t, errOut, "--confirm")
-	e.fails(exitcode.Usage, "-p", "prod", "topic", "delete", name)
-	e.ok("-p", "prod", "topic", "delete", name, "-y", "--confirm", name)
-	e.gone(name)
 }
 
 func TestCompletionTopics(t *testing.T) {

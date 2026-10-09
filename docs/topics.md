@@ -46,7 +46,7 @@ ntk topic elect-leaders orders              # preferred leader election
 ntk topic delete orders.tmp
 ```
 
-You see the plan first: partitions, size, message count, and which consumer groups still read the topic. On a `prod`-labelled profile you have to type the topic name.
+You see the plan first: partitions, size, message count, and which consumer groups still read the topic.
 
 ## Everything can be a dry run
 

@@ -310,7 +310,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.apply(msg.pl, msg.after)
 		default:
 			c := &confirmState{pl: msg.pl, after: msg.after, input: textinput.New()}
-			c.typed = msg.pl.Class == plan.Destructive && msg.pl.Confirm != "" && (msg.pl.Typed || hasLabel(m.prof, "prod"))
+			c.typed = msg.pl.Class == plan.Destructive && msg.pl.Confirm != "" && msg.pl.Typed
 			c.input.Prompt = ""
 			m.confirm = c
 			m.flash("", false)
@@ -358,15 +358,6 @@ func (m *model) updateForm(msg tea.Msg) tea.Cmd {
 		m.flash("cancelled", false)
 	}
 	return cmd
-}
-
-func hasLabel(p *profile.Profile, l string) bool {
-	for _, x := range p.Labels {
-		if x == l {
-			return true
-		}
-	}
-	return false
 }
 
 // globalKeys maps actions to their default key; config.json tui.keys can remap them.

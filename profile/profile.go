@@ -30,7 +30,6 @@ type Profile struct {
 	Auth             Auth      `json:"auth"`
 	ReadOnly         bool      `json:"read_only,omitempty"`
 	Color            string    `json:"color,omitempty"`
-	Labels           []string  `json:"labels,omitempty"`
 	Timeouts         *Timeouts `json:"timeouts,omitempty"`
 	Defaults         *Defaults `json:"defaults,omitempty"`
 }

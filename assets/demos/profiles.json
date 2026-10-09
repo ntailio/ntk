@@ -20,8 +20,7 @@
       "bootstrap_servers": ["localhost:19101"],
       "auth": { "mechanism": "none" },
       "read_only": true,
-      "color": "red",
-      "labels": ["prod"]
+      "color": "red"
     }
   }
 }
