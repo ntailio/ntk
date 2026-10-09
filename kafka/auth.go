@@ -14,7 +14,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/profile"
 )
 
 var saslMechanisms = map[string]func(profile.Auth) (sasl.Mechanism, error){

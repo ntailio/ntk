@@ -1,5 +1,5 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS := -s -w -X github.com/factualtech/ntk/buildinfo.Version=$(VERSION)
+LDFLAGS := -s -w -X github.com/ntailio/ntk/buildinfo.Version=$(VERSION)
 
 .PHONY: build install test test-short vet lint fmt check sandbox-up sandbox-down sandbox-reset demos
 

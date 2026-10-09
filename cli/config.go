@@ -14,10 +14,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/configs"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/prefs"
+	"github.com/ntailio/ntk/configs"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/prefs"
 )
 
 type configRows struct {

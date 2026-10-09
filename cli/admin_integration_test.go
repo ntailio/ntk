@@ -14,13 +14,13 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/acls"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/health"
-	"github.com/factualtech/ntk/principals"
-	"github.com/factualtech/ntk/quotas"
-	"github.com/factualtech/ntk/testkit"
-	"github.com/factualtech/ntk/tx"
+	"github.com/ntailio/ntk/acls"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/health"
+	"github.com/ntailio/ntk/principals"
+	"github.com/ntailio/ntk/quotas"
+	"github.com/ntailio/ntk/testkit"
+	"github.com/ntailio/ntk/tx"
 )
 
 func TestACLs(t *testing.T) {

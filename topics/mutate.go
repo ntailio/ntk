@@ -16,9 +16,9 @@ import (
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/configs"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/configs"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/units"
 )
 
 const (

@@ -19,12 +19,12 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/consume"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/groups"
-	"github.com/factualtech/ntk/record"
-	"github.com/factualtech/ntk/sink"
-	"github.com/factualtech/ntk/testkit"
+	"github.com/ntailio/ntk/consume"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/groups"
+	"github.com/ntailio/ntk/record"
+	"github.com/ntailio/ntk/sink"
+	"github.com/ntailio/ntk/testkit"
 )
 
 func TestProduceConsume(t *testing.T) {

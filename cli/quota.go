@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/quotas"
+	"github.com/ntailio/ntk/quotas"
 )
 
 type entityFlags struct {

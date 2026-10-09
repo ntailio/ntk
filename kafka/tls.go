@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/profile"
 )
 
 func tlsConfig(t *profile.TLS, resolve func(string) string) (*tls.Config, error) {

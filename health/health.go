@@ -14,10 +14,10 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/brokers"
-	"github.com/factualtech/ntk/monitor"
-	"github.com/factualtech/ntk/topics"
-	"github.com/factualtech/ntk/tx"
+	"github.com/ntailio/ntk/brokers"
+	"github.com/ntailio/ntk/monitor"
+	"github.com/ntailio/ntk/topics"
+	"github.com/ntailio/ntk/tx"
 )
 
 type Level int

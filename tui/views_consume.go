@@ -18,10 +18,10 @@ import (
 	"charm.land/huh/v2"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/consume"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/record"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/consume"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/record"
+	"github.com/ntailio/ntk/units"
 )
 
 func timeNow() time.Time { return time.Now() }

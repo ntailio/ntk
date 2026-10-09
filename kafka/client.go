@@ -9,7 +9,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/profile"
 )
 
 const DefaultClientID = "ntk"

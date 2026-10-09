@@ -18,7 +18,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
-	"github.com/factualtech/ntk/configs"
+	"github.com/ntailio/ntk/configs"
 )
 
 type Broker struct {

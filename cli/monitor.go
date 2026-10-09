@@ -19,10 +19,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/monitor"
-	"github.com/factualtech/ntk/output"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/monitor"
+	"github.com/ntailio/ntk/output"
+	"github.com/ntailio/ntk/units"
 )
 
 var sparkChars = []rune("▁▂▃▄▅▆▇█")

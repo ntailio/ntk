@@ -15,12 +15,12 @@ import (
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/factualtech/ntk/actions"
-	"github.com/factualtech/ntk/health"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/prefs"
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/actions"
+	"github.com/ntailio/ntk/health"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/prefs"
+	"github.com/ntailio/ntk/profile"
 )
 
 type view interface {

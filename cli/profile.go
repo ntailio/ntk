@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/profile"
 )
 
 func (a *app) newProfileCmd() *cobra.Command {

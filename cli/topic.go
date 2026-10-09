@@ -16,10 +16,10 @@ import (
 	"charm.land/huh/v2"
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/configs"
-	"github.com/factualtech/ntk/prefs"
-	"github.com/factualtech/ntk/topics"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/configs"
+	"github.com/ntailio/ntk/prefs"
+	"github.com/ntailio/ntk/topics"
+	"github.com/ntailio/ntk/units"
 )
 
 func (a *app) newTopicCmd() *cobra.Command {

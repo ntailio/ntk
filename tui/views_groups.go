@@ -12,10 +12,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 
-	"github.com/factualtech/ntk/acls"
-	"github.com/factualtech/ntk/groups"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/acls"
+	"github.com/ntailio/ntk/groups"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/units"
 )
 
 func newGroupsView(m *model) view {

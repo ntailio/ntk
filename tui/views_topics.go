@@ -14,12 +14,12 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 
-	"github.com/factualtech/ntk/acls"
-	"github.com/factualtech/ntk/configs"
-	"github.com/factualtech/ntk/groups"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/topics"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/acls"
+	"github.com/ntailio/ntk/configs"
+	"github.com/ntailio/ntk/groups"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/topics"
+	"github.com/ntailio/ntk/units"
 )
 
 func ints(v []int32) string {

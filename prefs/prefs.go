@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/profile"
 )
 
 type Prefs struct {

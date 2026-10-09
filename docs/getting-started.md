@@ -3,7 +3,7 @@
 ## Install
 
 ```sh
-go install github.com/factualtech/ntk/cmd/ntk@latest
+go install github.com/ntailio/ntk/cmd/ntk@latest
 ```
 
 Or from a checkout: `make build` writes `bin/ntk`. You need Go 1.26 or newer. ntk is a single static binary with no librdkafka or JVM.

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/units"
 )
 
 // parseIDs parses "0,3-5" into [0 3 4 5].

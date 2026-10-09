@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/factualtech/ntk/testkit"
+	"github.com/ntailio/ntk/testkit"
 )
 
 var fence = regexp.MustCompile("(?s)```[a-z]*\n(.*?)```")

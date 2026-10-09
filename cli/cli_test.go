@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/exitcode"
+	"github.com/ntailio/ntk/exitcode"
 )
 
 const testProfiles = `{

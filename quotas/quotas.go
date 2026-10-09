@@ -15,8 +15,8 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kadm"
 
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/units"
 )
 
 var aliases = map[string]string{

@@ -20,13 +20,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/consume"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/produce"
-	"github.com/factualtech/ntk/sink"
-	"github.com/factualtech/ntk/tui"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/consume"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/produce"
+	"github.com/ntailio/ntk/sink"
+	"github.com/ntailio/ntk/tui"
+	"github.com/ntailio/ntk/units"
 )
 
 type produceFlags struct {

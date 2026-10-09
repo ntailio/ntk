@@ -3,7 +3,7 @@
   <br>ntk
 </h1>
   <p align="center">
-    <a href="https://github.com/factualtech/ntk/actions/workflows/ci.yml"><img src="https://github.com/factualtech/ntk/actions/workflows/ci.yml/badge.svg?branch=trunk" alt="ci"></a>
+    <a href="https://github.com/ntailio/ntk/actions/workflows/ci.yml"><img src="https://github.com/ntailio/ntk/actions/workflows/ci.yml/badge.svg?branch=trunk" alt="ci"></a>
     <br />
     A fast, friendly CLI and TUI for Apache Kafka.
     <br />
@@ -48,7 +48,7 @@ ntk is a single static Go binary with no JVM and no librdkafka. It sends no tele
 ## Install
 
 ```sh
-go install github.com/factualtech/ntk/cmd/ntk@latest
+go install github.com/ntailio/ntk/cmd/ntk@latest
 ```
 
 Or from a checkout, `make build` writes `bin/ntk`. Go 1.26 or newer is required. Linux and macOS are fully supported; Windows works for everything except the Unix socket outputs.

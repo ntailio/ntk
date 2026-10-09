@@ -21,8 +21,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/profile"
 )
 
 type composer struct {

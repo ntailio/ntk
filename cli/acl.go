@@ -14,9 +14,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/acls"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/plan"
+	"github.com/ntailio/ntk/acls"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/plan"
 )
 
 type aclRows []acls.ACL

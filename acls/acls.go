@@ -16,7 +16,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
-	"github.com/factualtech/ntk/plan"
+	"github.com/ntailio/ntk/plan"
 )
 
 type ACL struct {

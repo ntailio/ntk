@@ -13,7 +13,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/plan"
+	"github.com/ntailio/ntk/plan"
 )
 
 const KindAlter = "config.alter"

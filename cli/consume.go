@@ -16,10 +16,10 @@ import (
 	"github.com/charmbracelet/x/term"
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/consume"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/sink"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/consume"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/sink"
+	"github.com/ntailio/ntk/units"
 )
 
 type consumeFlags struct {

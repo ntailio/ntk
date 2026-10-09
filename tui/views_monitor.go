@@ -13,8 +13,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/factualtech/ntk/monitor"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/monitor"
+	"github.com/ntailio/ntk/units"
 )
 
 func rate(f float64) string { return units.Rate(f) }

@@ -14,7 +14,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/groups"
+	"github.com/ntailio/ntk/groups"
 )
 
 type Status string

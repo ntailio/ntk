@@ -16,10 +16,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/twmb/franz-go/pkg/kerr"
 
-	"github.com/factualtech/ntk/brokers"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/brokers"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/profile"
 )
 
 func expiry(c *x509.Certificate) string {

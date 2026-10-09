@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/factualtech/ntk/testkit"
+	"github.com/ntailio/ntk/testkit"
 )
 
 func TestList(t *testing.T) {

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/testkit"
-	"github.com/factualtech/ntk/topics"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/testkit"
+	"github.com/ntailio/ntk/topics"
 )
 
 func TestTopicLifecycle(t *testing.T) {

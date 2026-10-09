@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/factualtech/ntk/profile"
-	"github.com/factualtech/ntk/testkit"
+	"github.com/ntailio/ntk/profile"
+	"github.com/ntailio/ntk/testkit"
 )
 
 func TestSandboxProfiles(t *testing.T) {

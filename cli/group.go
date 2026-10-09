@@ -16,9 +16,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/groups"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/groups"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/units"
 )
 
 func (a *app) newGroupCmd() *cobra.Command {

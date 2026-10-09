@@ -19,10 +19,10 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/output"
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/output"
+	"github.com/ntailio/ntk/profile"
 )
 
 type globalFlags struct {

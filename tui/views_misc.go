@@ -11,12 +11,12 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/factualtech/ntk/brokers"
-	"github.com/factualtech/ntk/health"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/topics"
-	"github.com/factualtech/ntk/tx"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/brokers"
+	"github.com/ntailio/ntk/health"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/topics"
+	"github.com/ntailio/ntk/tx"
+	"github.com/ntailio/ntk/units"
 )
 
 func newTxView(m *model) view {

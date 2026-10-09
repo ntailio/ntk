@@ -14,9 +14,9 @@ import (
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/acls"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/quotas"
+	"github.com/ntailio/ntk/acls"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/quotas"
 )
 
 type Cred struct {

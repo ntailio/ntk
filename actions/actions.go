@@ -10,15 +10,15 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kadm"
 
-	"github.com/factualtech/ntk/acls"
-	"github.com/factualtech/ntk/configs"
-	"github.com/factualtech/ntk/groups"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/principals"
-	"github.com/factualtech/ntk/quotas"
-	"github.com/factualtech/ntk/topics"
-	"github.com/factualtech/ntk/tx"
+	"github.com/ntailio/ntk/acls"
+	"github.com/ntailio/ntk/configs"
+	"github.com/ntailio/ntk/groups"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/principals"
+	"github.com/ntailio/ntk/quotas"
+	"github.com/ntailio/ntk/topics"
+	"github.com/ntailio/ntk/tx"
 )
 
 type applier func(ctx context.Context, cl *kafka.Client, pl *plan.Plan) error

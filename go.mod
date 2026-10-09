@@ -1,4 +1,4 @@
-module github.com/factualtech/ntk
+module github.com/ntailio/ntk
 
 go 1.26.2
 

@@ -18,13 +18,13 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/groups"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/principals"
-	"github.com/factualtech/ntk/profile"
-	"github.com/factualtech/ntk/quotas"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/groups"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/principals"
+	"github.com/ntailio/ntk/profile"
+	"github.com/ntailio/ntk/quotas"
 )
 
 type userRows []principals.User

@@ -14,8 +14,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/prefs"
-	"github.com/factualtech/ntk/topics"
+	"github.com/ntailio/ntk/prefs"
+	"github.com/ntailio/ntk/topics"
 )
 
 type fetchFunc func(ctx context.Context, s *session) ([]string, error)

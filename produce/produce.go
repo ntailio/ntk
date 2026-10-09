@@ -16,7 +16,7 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/record"
+	"github.com/ntailio/ntk/record"
 )
 
 var ErrUnixUnsupported = errors.New("--in unix: is not available on Windows (it only supports stream Unix sockets)")

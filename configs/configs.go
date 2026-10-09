@@ -17,7 +17,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/units"
 )
 
 type Kind = kmsg.ConfigResourceType

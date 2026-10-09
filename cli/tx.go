@@ -12,8 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/tx"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/tx"
+	"github.com/ntailio/ntk/units"
 )
 
 type txnRows []tx.Transaction

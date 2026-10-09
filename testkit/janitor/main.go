@@ -13,7 +13,7 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/testkit"
+	"github.com/ntailio/ntk/testkit"
 )
 
 func main() {

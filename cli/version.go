@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/buildinfo"
+	"github.com/ntailio/ntk/buildinfo"
 )
 
 type versionInfo buildinfo.Info

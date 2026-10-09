@@ -20,7 +20,7 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/record"
+	"github.com/ntailio/ntk/record"
 )
 
 const maxDatagram = 16 << 20

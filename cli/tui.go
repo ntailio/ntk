@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/profile"
-	"github.com/factualtech/ntk/tui"
+	"github.com/ntailio/ntk/profile"
+	"github.com/ntailio/ntk/tui"
 )
 
 func (a *app) runTUI(ctx context.Context, view, arg string) error {

@@ -14,13 +14,13 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 
-	"github.com/factualtech/ntk/acls"
-	"github.com/factualtech/ntk/brokers"
-	"github.com/factualtech/ntk/configs"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/principals"
-	"github.com/factualtech/ntk/quotas"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/acls"
+	"github.com/ntailio/ntk/brokers"
+	"github.com/ntailio/ntk/configs"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/principals"
+	"github.com/ntailio/ntk/quotas"
+	"github.com/ntailio/ntk/units"
 )
 
 func newBrokersView(m *model) view {

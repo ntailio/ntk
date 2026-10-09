@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/factualtech/ntk/cli"
+	"github.com/ntailio/ntk/cli"
 )
 
 func main() {

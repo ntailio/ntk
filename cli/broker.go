@@ -13,10 +13,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/factualtech/ntk/brokers"
-	"github.com/factualtech/ntk/configs"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/units"
+	"github.com/ntailio/ntk/brokers"
+	"github.com/ntailio/ntk/configs"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/units"
 )
 
 type brokerRows []brokers.Broker

@@ -19,11 +19,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/factualtech/ntk/actions"
-	"github.com/factualtech/ntk/exitcode"
-	"github.com/factualtech/ntk/kafka"
-	"github.com/factualtech/ntk/plan"
-	"github.com/factualtech/ntk/profile"
+	"github.com/ntailio/ntk/actions"
+	"github.com/ntailio/ntk/exitcode"
+	"github.com/ntailio/ntk/kafka"
+	"github.com/ntailio/ntk/plan"
+	"github.com/ntailio/ntk/profile"
 )
 
 type session struct {

@@ -13,7 +13,7 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kadm"
 
-	"github.com/factualtech/ntk/topics"
+	"github.com/ntailio/ntk/topics"
 )
 
 type point struct {
