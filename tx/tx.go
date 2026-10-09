@@ -225,6 +225,9 @@ func PlanAbort(ctx context.Context, adm *kadm.Client, t AbortTarget) (*plan.Plan
 	}
 	var p *Producer
 	for i := range ps {
+		if !ps[i].Open() {
+			continue
+		}
 		switch {
 		case t.StartOffset != nil && ps[i].TxnStartOffset == *t.StartOffset:
 			p = &ps[i]

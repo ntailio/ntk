@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -366,5 +367,22 @@ func TestDryRunChangesNothing(t *testing.T) {
 	}
 	if n := len(offsets.Sorted()); n != 0 {
 		t.Errorf("consume -g --dry-run committed %d offsets", n)
+	}
+}
+
+func TestTxAbortNeedsOpenTransaction(t *testing.T) {
+	e := newEnv(t, nil)
+	name := testkit.Topic(t, e.adm, "noabort", 1)
+	testkit.Produce(t, name, "plain") // idempotent, so it has a producer id, but no transaction
+
+	var ps []struct {
+		ProducerID int64 `json:"producer_id"`
+	}
+	if err := json.Unmarshal([]byte(e.ok("tx", "producers", name, "-o", "json")), &ps); err != nil || len(ps) == 0 {
+		t.Fatalf("producers: %v %+v", err, ps)
+	}
+	_, errOut, code := e.run("tx", "abort", "--topic", name, "--partition", "0", "--producer-id", strconv.FormatInt(ps[0].ProducerID, 10), "--dry-run")
+	if code == exitcode.OK || !strings.Contains(errOut, "no open transaction") {
+		t.Errorf("abort of a producer without a transaction: exit %d, %s", code, errOut)
 	}
 }
