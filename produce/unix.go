@@ -15,6 +15,7 @@ import (
 	"net"
 	"os"
 	"slices"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -79,10 +80,14 @@ func (l *Listener) Source(meta bool, base kgo.Record, keep Keep, idle time.Durat
 	n := 0
 	draining := false
 	registered := false
+	var woken atomic.Bool
 	return func(ctx context.Context) (*kgo.Record, error) {
 		if !registered {
 			registered = true
-			context.AfterFunc(ctx, func() { _ = l.conn.SetReadDeadline(time.Now()) })
+			context.AfterFunc(ctx, func() {
+				woken.Store(true) // before the deadline moves, so a read it cuts short sees it
+				_ = l.conn.SetReadDeadline(time.Now())
+			})
 		}
 		for {
 			if ctx.Err() != nil {
@@ -101,6 +106,11 @@ func (l *Listener) Source(meta bool, base kgo.Record, keep Keep, idle time.Durat
 			}
 			size, _, flags, _, err := l.conn.ReadMsgUnix(l.buf, nil)
 			if errors.Is(err, os.ErrDeadlineExceeded) {
+				// The wake-up on cancel can land after a fresh deadline was set and cut that
+				// read short, which isn't an empty queue: read again.
+				if woken.Swap(false) {
+					continue
+				}
 				if draining || (ctx.Err() == nil && idle > 0) {
 					return nil, io.EOF
 				}
