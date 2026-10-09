@@ -43,7 +43,7 @@ ntk p orders --from-topic orders --from-profile prod         # cluster to cluste
 ntk -p prod c orders --from -1h -m | ntk -p staging p orders -m
 ```
 
-There's also `--in unix:<path>`, which listens on a socket. See [Mirroring](mirroring.md).
+There's also `--in unix:<path>`, which listens on a socket, and `--in npipe:<name>`, which does the same with a named pipe on Windows. See [Mirroring](mirroring.md).
 
 ## Delivery settings
 

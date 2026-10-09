@@ -101,6 +101,10 @@ func TestExitCodes(t *testing.T) {
 		{[]string{"topic", "list", "a", "b"}, exitcode.Usage},
 		{[]string{"frobnicate"}, exitcode.Usage},
 		{[]string{"profile", "list", "-o", "xml"}, exitcode.Usage},
+		{[]string{"consume", "t", "-o", `npipe:C:\x`}, exitcode.Usage},
+		{[]string{"consume", "t", "--npipe-wait"}, exitcode.Usage},
+		{[]string{"produce", "t", "--in", "npipe:"}, exitcode.Usage},
+		{[]string{"produce", "t", "--in", "npipe:t", "-f", "x"}, exitcode.Usage},
 	}
 	for _, tt := range tests {
 		t.Run(strings.Join(tt.args, " "), func(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -121,6 +122,14 @@ func (a *app) completeTopicList(cmd *cobra.Command, _ []string, toComplete strin
 		out = append(out, head+name)
 	}
 	return out, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+}
+
+// Windows has named pipes instead of Unix datagram sockets.
+func socketPrefix() string {
+	if runtime.GOOS == "windows" {
+		return "npipe:"
+	}
+	return "unix:"
 }
 
 // unixPaths completes the path part of unix:<path>; bash can't file-complete behind the prefix.

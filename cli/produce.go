@@ -77,17 +77,17 @@ func (a *app) newProduceCmd() *cobra.Command {
 	fl.StringVarP(&f.key, "key", "k", "", "message key (@path reads a file)")
 	fl.StringVarP(&f.value, "value", "v", "", "message value (@path reads a file, @- reads stdin as one message)")
 	fl.StringArrayVarP(&f.headers, "header", "H", nil, "header key=value (repeatable)")
-	fl.StringVarP(&f.in, "in", "I", "raw", "input: raw (delimited values), jsonl (ntk records), or unix:<path> (one datagram per message)")
-	fl.BoolVarP(&f.meta, "meta", "m", false, "raw and unix: each message starts with the consume -m metadata line")
+	fl.StringVarP(&f.in, "in", "I", "raw", "input: raw (delimited values), jsonl (ntk records), unix:<path> (one datagram per message), or npipe:<path> (Windows; one pipe message per message)")
+	fl.BoolVarP(&f.meta, "meta", "m", false, "raw, unix: and npipe: each message starts with the consume -m metadata line")
 	fl.StringVarP(&f.file, "file", "f", "", "read the input from this file instead of stdin (format from --in)")
 	fl.StringVar(&f.delimiter, "delimiter", `\n`, "raw: message separator (same syntax as consume)")
 	fl.StringVar(&f.keySep, "key-sep", "", "raw without -m: split each message into key<sep>value")
-	fl.DurationVar(&f.idle, "idle-timeout", 0, "unix: stop after this long without a datagram (default: until interrupted)")
+	fl.DurationVar(&f.idle, "idle-timeout", 0, "unix:/npipe: stop after this long without a message (default: until interrupted)")
 	fl.StringVar(&f.fromTopic, "from-topic", "", "copy messages from this topic")
 	fl.StringVar(&f.fromProfile, "from-profile", "", "with --from-topic: read from this profile")
 	fl.StringVar(&f.from, "from", "earliest", "with --from-topic: start position (as consume --from)")
 	fl.StringVar(&f.until, "until", "", "with --from-topic: stop position (as consume --until)")
-	fl.IntVarP(&f.limit, "limit", "n", 0, "stop after N messages (stdin, file, unix socket, or --from-topic)")
+	fl.IntVarP(&f.limit, "limit", "n", 0, "stop after N messages (stdin, file, socket, pipe, or --from-topic)")
 	fl.BoolVarP(&f.interactive, "interactive", "i", false, "open the interactive composer")
 	fl.Int32VarP(&f.partition, "partition", "P", -1, "force a partition")
 	fl.StringVar(&f.opts.Partitioner, "partitioner", "murmur2", "murmur2 (Java-compatible), round-robin, or sticky")
@@ -109,7 +109,7 @@ func (a *app) newProduceCmd() *cobra.Command {
 		if rest, ok := strings.CutPrefix(toComplete, "unix:"); ok {
 			return unixPaths(rest), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 		}
-		return []string{"raw", "jsonl", "unix:"}, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+		return []string{"raw", "jsonl", socketPrefix()}, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 	})
 	for flag, vals := range map[string][]string{
 		"partitioner": {"murmur2", "round-robin", "sticky"}, "acks": {"all", "1", "0"},
@@ -139,6 +139,13 @@ func uuid() string {
 
 type produceInput struct{ kind, path string }
 
+func (in produceInput) listens() bool { return in.kind == "unix" || in.kind == "npipe" }
+
+type listener interface {
+	Source(meta bool, base kgo.Record, keep produce.Keep, idle time.Duration) produce.Source
+	Close() error
+}
+
 func parseProduceInput(s string) (produceInput, error) {
 	switch {
 	case s == "" || s == "raw":
@@ -150,8 +157,17 @@ func parseProduceInput(s string) (produceInput, error) {
 			return produceInput{}, errors.New("--in unix: needs a socket path")
 		}
 		return produceInput{kind: "unix", path: strings.TrimPrefix(s, "unix:")}, nil
+	case strings.HasPrefix(s, "npipe:"):
+		if strings.TrimPrefix(s, "npipe:") == "" {
+			return produceInput{}, errors.New("--in npipe: needs a pipe name")
+		}
+		path, err := sink.PipePath(strings.TrimPrefix(s, "npipe:"))
+		if err != nil {
+			return produceInput{}, err
+		}
+		return produceInput{kind: "npipe", path: path}, nil
 	}
-	return produceInput{}, fmt.Errorf("unknown produce input %q (use raw, jsonl, or unix:<path>)", s)
+	return produceInput{}, fmt.Errorf("unknown produce input %q (use raw, jsonl, unix:<path>, or npipe:<path>)", s)
 }
 
 func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error {
@@ -175,17 +191,19 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 	keep := produce.Keep{Topic: f.keepTopic, Partition: f.keepPartition, Timestamp: f.keepTimestamp}
 	switch {
 	case f.meta && !stream:
-		return usageErr("-m applies to --in raw and --in unix:")
+		return usageErr("-m applies to --in raw, unix: and npipe:")
 	case keep != produce.Keep{} && !(stream && (in.kind == "jsonl" || f.meta)):
 		return usageErr("--keep-topic, --keep-partition, and --keep-timestamp need metadata input (--in jsonl, or -m)")
 	case in.kind == "unix" && f.file != "":
 		return usageErr("-f reads a file; --in unix: reads the socket. Use one")
+	case in.kind == "npipe" && f.file != "":
+		return usageErr("-f reads a file; --in npipe: reads the pipe. Use one")
 	case in.kind != "raw" && (fl.Changed("delimiter") || fl.Changed("key-sep")):
 		return usageErr("--delimiter and --key-sep only apply to --in raw")
 	case f.keySep != "" && f.meta:
 		return usageErr("--key-sep can't be used with -m (the key comes from the metadata line)")
-	case fl.Changed("idle-timeout") && in.kind != "unix":
-		return usageErr("--idle-timeout only applies to --in unix:")
+	case fl.Changed("idle-timeout") && !in.listens():
+		return usageErr("--idle-timeout only applies to --in unix: and npipe:")
 	case f.limit > 0 && single:
 		return usageErr("-n applies to bulk input; use --count to repeat a message")
 	case f.interactive && a.flags.dryRun:
@@ -284,6 +302,8 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 		switch {
 		case in.kind == "unix":
 			from = "unix socket " + in.path
+		case in.kind == "npipe":
+			from = "named pipe " + in.path
 		case f.file != "" && f.file != "-":
 			fh, err := os.Open(f.file)
 			if err != nil {
@@ -294,7 +314,7 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 		case a.canPrompt() && !accessible():
 			return usageErr("no input: use -k/-v, --in/-f, --from-topic, -i, or pipe data to stdin")
 		}
-		f.opts.Graceful = from == "stdin" || in.kind == "unix"
+		f.opts.Graceful = from == "stdin" || in.listens()
 		switch in.kind {
 		case "jsonl":
 			src = produce.WithHeaders(produce.Records(r, topic, keep), base.Headers)
@@ -353,9 +373,14 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 	defer cl.Close()
 	// Guards stderr/stdout: deliveries and the stop note are written from other goroutines.
 	var mu sync.Mutex
-	if in.kind == "unix" && !single {
-		l, err := produce.Listen(in.path)
-		if errors.Is(err, produce.ErrUnixUnsupported) {
+	if in.listens() && !single {
+		var l listener
+		if in.kind == "unix" {
+			l, err = produce.Listen(in.path)
+		} else {
+			l, err = produce.ListenPipe(in.path)
+		}
+		if errors.Is(err, produce.ErrUnixUnsupported) || errors.Is(err, produce.ErrNpipeUnsupported) {
 			return exitcode.With(exitcode.Unsupported, err)
 		}
 		if err != nil {
@@ -407,13 +432,17 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 }
 
 // dryRunProduce reads and validates the input without sending anything, then
-// shows what would be produced. A socket isn't bound, and --repeat isn't run.
+// shows what would be produced. A socket or pipe isn't bound, and --repeat isn't run.
 func (a *app) dryRunProduce(ctx context.Context, s *session, src produce.Source, topic string, in produceInput, f produceFlags) error {
 	pl := &plan.Plan{Class: plan.SafeWrite}
 	switch {
 	case src == nil:
+		what := "datagram"
+		if in.kind == "npipe" {
+			what = "pipe message"
+		}
 		pl.Summary = "Listen on " + in.path + ":"
-		pl.Changes = []string{"→ produce each datagram to " + topic}
+		pl.Changes = []string{"→ produce each " + what + " to " + topic}
 	case f.repeat:
 		pl.Summary = "Produce until interrupted:"
 		pl.Changes = []string{"→ " + topic}

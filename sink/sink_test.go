@@ -36,13 +36,16 @@ func TestParseTarget(t *testing.T) {
 	for in, want := range map[string]Target{
 		"": {Kind: "raw"}, "raw": {Kind: "raw"}, "jsonl": {Kind: "jsonl"},
 		"unix:/run/a:b.sock": {Kind: "unix", Arg: "/run/a:b.sock"}, "exec:jq -c .": {Kind: "exec", Arg: "jq -c ."},
+		"npipe:orders": {Kind: "npipe", Arg: `\\.\pipe\orders`}, `npipe:\\.\pipe\a b`: {Kind: "npipe", Arg: `\\.\pipe\a b`},
+		`npipe:\\host\PIPE\x\y`: {Kind: "npipe", Arg: `\\host\PIPE\x\y`},
 	} {
 		got, err := ParseTarget(in)
 		if err != nil || got != want {
 			t.Errorf("%q: got %+v, %v", in, got, err)
 		}
 	}
-	for _, bad := range []string{"table", "json", "unix:", "exec:  "} {
+	for _, bad := range []string{"table", "json", "unix:", "exec:  ", "npipe:", `npipe:C:\x`, "npipe://./pipe/x", "npipe:a/b",
+		`npipe:\\.\pipe\`, `npipe:\\.\other\x`, `npipe:\\\pipe\x`} {
 		if _, err := ParseTarget(bad); err == nil {
 			t.Errorf("%q: expected an error", bad)
 		}

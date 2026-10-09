@@ -40,6 +40,20 @@ ntk p events --in unix:/tmp/events.sock &
 printf 'hello' | socat -u STDIN UNIX-SENDTO:/tmp/events.sock
 ```
 
+### On Windows: a named pipe
+
+Windows has no Unix datagram sockets, so use a named pipe instead. It works the same way, one pipe message per Kafka message:
+
+```powershell
+# the receiving side creates the pipe
+ntk -p staging p orders --in npipe:orders -m
+
+# the sending side connects (--npipe-wait waits for the pipe)
+ntk -p prod c orders -f -m -o npipe:orders --npipe-wait
+```
+
+`npipe:orders` is short for `\\.\pipe\orders`. Any program can open the pipe and write to it; each write is one message. To receive from `ntk consume -o npipe:`, a program creates the pipe in message mode (`PIPE_TYPE_MESSAGE`).
+
 ## What about MirrorMaker?
 
 [MirrorMaker 2](https://kafka.apache.org/documentation/#georeplication) is the right tool for **continuous, production replication**: it runs as a long-lived service, tracks offsets, syncs consumer group positions and topic configs, and survives restarts.

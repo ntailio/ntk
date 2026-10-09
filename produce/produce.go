@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +20,10 @@ import (
 	"github.com/ntailio/ntk/record"
 )
 
-var ErrUnixUnsupported = errors.New("--in unix: is not available on Windows (it only supports stream Unix sockets)")
+var (
+	ErrUnixUnsupported  = errors.New("--in unix: is not available on Windows (it only supports stream Unix sockets); use --in npipe:<name>")
+	ErrNpipeUnsupported = errors.New("--in npipe: is only available on Windows; use --in unix:<path>")
+)
 
 type Delivery struct {
 	Topic     string `json:"topic"`
@@ -191,6 +195,36 @@ func (k Keep) apply(rec *kgo.Record, topic string) *kgo.Record {
 		rec.Timestamp = time.Time{}
 	}
 	return rec
+}
+
+// decode turns one datagram or pipe message into a record. Without meta the
+// message is the value; with meta it is the metadata line, \n, then the value.
+// The record keeps data.
+func decode(data []byte, meta bool, base kgo.Record, keep Keep) (*kgo.Record, error) {
+	if !meta {
+		rec := base
+		rec.Headers = slices.Clone(base.Headers)
+		rec.Value = data
+		return &rec, nil
+	}
+	i := bytes.IndexByte(data, '\n')
+	if i < 0 {
+		return nil, errors.New("no metadata line (is the sender using -m?)")
+	}
+	m, err := record.ParseMeta(data[:i])
+	if err != nil {
+		return nil, fmt.Errorf("not a metadata line: %w", err)
+	}
+	value := data[i+1:]
+	if m.ValueSize != len(value) {
+		return nil, fmt.Errorf("value_size is %d but %d value bytes arrived (truncated by the sender?)", m.ValueSize, len(value))
+	}
+	rec, err := m.ToKgo(value)
+	if err != nil {
+		return nil, err
+	}
+	rec.Headers = append(rec.Headers, base.Headers...)
+	return keep.apply(rec, base.Topic), nil
 }
 
 // MetaStream reads what consume -m writes to stdout: a metadata line, exactly

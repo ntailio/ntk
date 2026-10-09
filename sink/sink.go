@@ -42,7 +42,7 @@ type Sink interface {
 }
 
 type Target struct {
-	Kind string // raw, jsonl, unix, exec
+	Kind string // raw, jsonl, unix, npipe, exec
 	Arg  string // path or command
 }
 
@@ -57,13 +57,37 @@ func ParseTarget(s string) (Target, error) {
 			return Target{}, errors.New("-o unix: needs a socket path")
 		}
 		return Target{Kind: "unix", Arg: strings.TrimPrefix(s, "unix:")}, nil
+	case strings.HasPrefix(s, "npipe:"):
+		if strings.TrimPrefix(s, "npipe:") == "" {
+			return Target{}, errors.New("-o npipe: needs a pipe name")
+		}
+		path, err := PipePath(strings.TrimPrefix(s, "npipe:"))
+		if err != nil {
+			return Target{}, err
+		}
+		return Target{Kind: "npipe", Arg: path}, nil
 	case strings.HasPrefix(s, "exec:"):
 		if strings.TrimSpace(strings.TrimPrefix(s, "exec:")) == "" {
 			return Target{}, errors.New("-o exec: needs a command")
 		}
 		return Target{Kind: "exec", Arg: strings.TrimPrefix(s, "exec:")}, nil
 	}
-	return Target{}, fmt.Errorf("unknown consume output %q (use raw, jsonl, unix:<path>, or exec:<command>)", s)
+	return Target{}, fmt.Errorf("unknown consume output %q (use raw, jsonl, unix:<path>, npipe:<path>, or exec:<command>)", s)
+}
+
+// PipePath expands a bare Windows pipe name to \\.\pipe\<name>. Anything else
+// must already be a pipe path, \\<host>\pipe\<name>.
+func PipePath(s string) (string, error) {
+	if !strings.ContainsAny(s, `\/`) {
+		return `\\.\pipe\` + s, nil
+	}
+	rest, ok := strings.CutPrefix(s, `\\`)
+	host, rest, _ := strings.Cut(rest, `\`)
+	dir, name, _ := strings.Cut(rest, `\`)
+	if !ok || host == "" || !strings.EqualFold(dir, "pipe") || name == "" {
+		return "", fmt.Errorf(`%s is not a named pipe: use <name> or \\.\pipe\<name>`, s)
+	}
+	return s, nil
 }
 
 // ParseDelimiter accepts ASCII text with \n \r \t \0 \\ and \xHH escapes.
@@ -113,7 +137,7 @@ func ParseDelimiter(s string) ([]byte, error) {
 	return out, nil
 }
 
-// payload is what unix and exec targets receive: [meta line \n] value.
+// payload is what unix, npipe and exec targets receive: [meta line \n] value.
 func payload(r *kgo.Record, meta bool) []byte {
 	if !meta {
 		return r.Value

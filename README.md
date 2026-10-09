@@ -75,7 +75,7 @@ docker run --rm -it -v ~/.config/ntk:/home/ntk/.config/ntk ghcr.io/ntailio/ntk t
 go install github.com/ntailio/ntk/cmd/ntk@latest
 ```
 
-Linux and macOS are fully supported; Windows works for everything except the Unix socket outputs.
+Linux, macOS and Windows are fully supported. On Windows, named pipes (`npipe:`) take the place of Unix sockets.
 
 Then connect to a cluster and have a look around:
 
@@ -121,7 +121,7 @@ ntk is young and under active development. It's in use against real clusters, an
 | Area | Status |
 |---|---|
 | Topics, partitions, configuration, reassignment | ✅ |
-| Consuming and producing, replay, copy, Unix socket mirroring | ✅ |
+| Consuming and producing, replay, copy, mirroring over Unix sockets and named pipes | ✅ |
 | Consumer groups: lag, members, offset resets, KIP-848 and share groups | ✅ |
 | Monitoring: watch, top, lag checks, cluster health | ✅ |
 | ACLs with recipes, SCRAM users, quotas, principal view | ✅ |
@@ -143,7 +143,7 @@ ntk -p staging produce orders --in unix:/tmp/orders.sock -m
 ntk -p prod consume orders --from -1h -m -o unix:/tmp/orders.sock --unix-wait
 ```
 
-That's a topic mirror between two clusters with keys, headers and tombstones intact, and it stops cleanly on ctrl-c. The same socket works for any program that isn't a Kafka client. For continuous production replication you still want MirrorMaker; the [mirroring chapter](docs/mirroring.md) explains when to use which.
+That's a topic mirror between two clusters with keys, headers and tombstones intact, and it stops cleanly on ctrl-c. The same socket works for any program that isn't a Kafka client. On Windows, a named pipe does the same: `npipe:orders` in place of `unix:/tmp/orders.sock`, and `--npipe-wait`. For continuous production replication you still want MirrorMaker; the [mirroring chapter](docs/mirroring.md) explains when to use which.
 
 ### A command per message
 

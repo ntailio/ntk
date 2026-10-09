@@ -32,6 +32,7 @@ type consumeFlags struct {
 	delimiter    string
 	noEscape     bool
 	unixWait     bool
+	npipeWait    bool
 	execTimeout  time.Duration
 	execParallel int
 	execContinue bool
@@ -46,7 +47,7 @@ func completeConsumeOutput(toComplete string) ([]string, cobra.ShellCompDirectiv
 	if rest, ok := strings.CutPrefix(toComplete, "unix:"); ok {
 		return unixPaths(rest), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 	}
-	return []string{"raw", "jsonl", "unix:", "exec:"}, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+	return []string{"raw", "jsonl", socketPrefix(), "exec:"}, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 }
 
 func (a *app) newConsumeCmd() *cobra.Command {
@@ -56,7 +57,7 @@ func (a *app) newConsumeCmd() *cobra.Command {
 		Aliases: []string{"c"},
 		Short:   "Read messages (raw bytes; no consumer group unless -g)",
 		Long: "Reads all partitions by default and writes raw message values.\n" +
-			"-o selects the output target: raw (default), jsonl, unix:<path>, exec:<command>.",
+			"-o selects the output target: raw (default), jsonl, unix:<path>, npipe:<path> (Windows), exec:<command>.",
 		Example: "  ntk c orders --from -5 -m\n" +
 			"  ntk c orders --from -1h -o 'exec:jq -c \"select(.status == \\\"FAILED\\\")\"'\n" +
 			"  ntk c orders -f -m -o unix:/run/myapp/ingest.sock --unix-wait\n" +
@@ -78,10 +79,11 @@ func (a *app) newConsumeCmd() *cobra.Command {
 	fl.StringVar(&f.delimiter, "delimiter", `\n`, `-o raw: message separator (ASCII; \n \r \t \0 \\ \xHH)`)
 	fl.BoolVar(&f.noEscape, "no-escape", false, "-o raw: write control bytes as-is even to a terminal")
 	fl.BoolVar(&f.unixWait, "unix-wait", false, "-o unix: wait for the socket to appear")
+	fl.BoolVar(&f.npipeWait, "npipe-wait", false, "-o npipe: wait for the pipe to appear")
 	fl.DurationVar(&f.execTimeout, "exec-timeout", 30*time.Second, "-o exec: per-command timeout (0 = none)")
 	fl.IntVar(&f.execParallel, "exec-parallel", 1, "-o exec: commands at once (>1 loses ordering)")
 	fl.BoolVar(&f.execContinue, "exec-continue", false, "-o exec: log failures and keep going")
-	fl.BoolVar(&f.receipt, "receipt", false, "-o unix:/exec: write one JSON receipt line per message to stdout")
+	fl.BoolVar(&f.receipt, "receipt", false, "-o unix:/npipe:/exec: write one JSON receipt line per message to stdout")
 	fl.StringVarP(&f.group, "group", "g", "", "consume as a member of this group (commits offsets)")
 	fl.BoolVar(&f.noCommit, "no-commit", false, "with -g: never commit offsets")
 	fl.StringVar(&f.isolation, "isolation", "read_uncommitted", "read_uncommitted or read_committed")
@@ -120,8 +122,9 @@ func (a *app) runConsume(cmd *cobra.Command, topicNames []string, f consumeFlags
 		kinds []string
 	}{
 		{"delimiter", []string{"raw"}}, {"no-escape", []string{"raw"}}, {"unix-wait", []string{"unix"}},
+		{"npipe-wait", []string{"npipe"}},
 		{"exec-timeout", []string{"exec"}}, {"exec-parallel", []string{"exec"}}, {"exec-continue", []string{"exec"}},
-		{"receipt", []string{"unix", "exec"}},
+		{"receipt", []string{"unix", "npipe", "exec"}},
 	} {
 		if err := check(c.flag, c.kinds...); err != nil {
 			return err
@@ -215,6 +218,12 @@ func (a *app) runConsume(cmd *cobra.Command, topicNames []string, f consumeFlags
 			return exitcode.With(exitcode.OutputTarget, err)
 		}
 		out_ = u
+	case "npipe":
+		p, err := sink.DialPipe(cmd.Context(), target.Arg, f.meta, f.npipeWait)
+		if err != nil {
+			return exitcode.With(exitcode.OutputTarget, err)
+		}
+		out_ = p
 	case "exec":
 		stdout := a.stdout
 		if f.receipt {
@@ -246,7 +255,7 @@ func (a *app) runConsume(cmd *cobra.Command, topicNames []string, f consumeFlags
 		fmt.Fprintf(a.stderr, "consuming %s · %s%s\n", strings.Join(topicNames, ","), units.Plural(int64(pl.Partitions()), "partition"), iso)
 	}
 	// The redrawn line would get mixed into message output on the same terminal.
-	liveProgress := showProgress && (!stdoutTTY(a) || (target.Kind == "unix" && !f.receipt))
+	liveProgress := showProgress && (!stdoutTTY(a) || ((target.Kind == "unix" || target.Kind == "npipe") && !f.receipt))
 	var lastDraw time.Time
 	progress := func(st consume.Stats) {
 		if !liveProgress || time.Since(lastDraw) < 200*time.Millisecond {

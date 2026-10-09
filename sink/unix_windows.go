@@ -13,7 +13,7 @@ import (
 type Unix struct{}
 
 func DialUnix(context.Context, string, bool, bool) (*Unix, error) {
-	return nil, errors.New("-o unix: is not available on Windows (it only supports stream Unix sockets)")
+	return nil, errors.New("-o unix: is not available on Windows (it only supports stream Unix sockets); use -o npipe:<name>")
 }
 
 func (s *Unix) Deliver(context.Context, *kgo.Record, func(Receipt, error)) {}

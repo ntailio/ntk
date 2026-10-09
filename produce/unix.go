@@ -6,7 +6,6 @@
 package produce
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,13 +13,10 @@ import (
 	"io/fs"
 	"net"
 	"os"
-	"slices"
 	"syscall"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
-
-	"github.com/ntailio/ntk/record"
 )
 
 const maxDatagram = 16 << 20
@@ -113,31 +109,11 @@ func (l *Listener) Source(meta bool, base kgo.Record, keep Keep, idle time.Durat
 			if flags&syscall.MSG_TRUNC != 0 {
 				return nil, fmt.Errorf("datagram %d is larger than %d bytes", n, maxDatagram)
 			}
-			data := l.buf[:size]
-			if !meta {
-				rec := base
-				rec.Headers = slices.Clone(base.Headers)
-				rec.Value = append([]byte{}, data...)
-				return &rec, nil
-			}
-			i := bytes.IndexByte(data, '\n')
-			if i < 0 {
-				return nil, fmt.Errorf("datagram %d has no metadata line (is the sender using -m?)", n)
-			}
-			m, err := record.ParseMeta(data[:i])
-			if err != nil {
-				return nil, fmt.Errorf("datagram %d: not a metadata line: %w", n, err)
-			}
-			value := data[i+1:]
-			if m.ValueSize != len(value) {
-				return nil, fmt.Errorf("datagram %d: value_size is %d but %d value bytes arrived (truncated by the sender?)", n, m.ValueSize, len(value))
-			}
-			rec, err := m.ToKgo(append([]byte{}, value...))
+			rec, err := decode(append([]byte{}, l.buf[:size]...), meta, base, keep)
 			if err != nil {
 				return nil, fmt.Errorf("datagram %d: %w", n, err)
 			}
-			rec.Headers = append(rec.Headers, base.Headers...)
-			return keep.apply(rec, base.Topic), nil
+			return rec, nil
 		}
 	}
 }
