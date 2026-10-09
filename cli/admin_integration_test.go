@@ -31,21 +31,15 @@ func TestACLs(t *testing.T) {
 	group := testkit.Name(t, "grp")
 
 	e.ok("acl", "grant", "consumer", "--principal", principal, "--topic", topic, "--group", group)
-	var list []acls.ACL
-	eventually(t, "3 ACLs after grant consumer", func() bool {
-		list = nil
-		json.Unmarshal([]byte(e.out("acl", "list", "--principal", principal, "-o", "json")), &list)
-		return len(list) == 3
-	})
-	eventually(t, "ACLs visible on every broker", func() bool {
-		return strings.Contains(e.ok("acl", "list", "--topic", topic, "--pattern", "match"), principal)
-	})
+	testkit.WaitACLs(t, e.adm, principal, 3)
+	contains(t, e.ok("acl", "list", "--topic", topic, "--pattern", "match"), principal)
 
 	e.ok("acl", "check", "--principal", principal, "--operation", "read", "--topic", topic)
 	e.ok("acl", "check", "--principal", principal, "--operation", "describe", "--topic", topic)
 	e.fails(exitcode.CheckFailed, "acl", "check", "--principal", principal, "--operation", "write", "--topic", topic)
 
 	e.ok("acl", "create", "--principal", principal, "--operation", "write", "--topic", topic, "--deny")
+	testkit.WaitACLs(t, e.adm, principal, 4)
 	e.fails(exitcode.CheckFailed, "acl", "check", "--principal", principal, "--operation", "write", "--topic", topic)
 
 	exported := filepath.Join(t.TempDir(), "acls.json")
@@ -60,6 +54,7 @@ func TestACLs(t *testing.T) {
 	})
 
 	e.ok("acl", "delete", "--principal", principal, "--operation", "write", "--topic", topic, "-y")
+	testkit.WaitACLs(t, e.adm, principal, 3)
 	e.fails(exitcode.Usage, "acl", "delete", "-y")
 	e.fails(exitcode.Usage, "acl", "import", "-f", exported, "--prune")
 
@@ -68,11 +63,13 @@ func TestACLs(t *testing.T) {
 	// The plan is built from one broker's view, which may lag, so re-apply until it converges.
 	eventually(t, "only the group ACL after import --prune", func() bool {
 		e.ok("acl", "import", "-f", empty, "--prune", "--scope", principal, "-y")
-		list = nil
+		var list []acls.ACL
 		json.Unmarshal([]byte(e.out("acl", "list", "--principal", principal, "-o", "json")), &list)
 		return len(list) == 1 && list[0].ResourceType == "GROUP"
 	})
+	testkit.WaitACLs(t, e.adm, principal, 1)
 	e.ok("acl", "grant", "producer", "--principal", principal, "--topic", topic)
+	testkit.WaitACLs(t, e.adm, principal, 3)
 	e.ok("acl", "revoke", "producer", "--principal", principal, "--topic", topic, "-y")
 	e.fails(exitcode.Usage, "acl", "grant", "streams-app", "--principal", principal)
 	e.fails(exitcode.Usage, "acl", "grant", "nope", "--principal", principal)

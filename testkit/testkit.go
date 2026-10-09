@@ -10,6 +10,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -122,8 +123,9 @@ func RepoRoot(t testing.TB) string {
 	}
 }
 
-// waitVisible waits until every broker's metadata has the topic's leaders.
-func waitVisible(t testing.TB, adm *kadm.Client, name string) {
+// onEveryBroker polls each broker directly until check passes on all of them:
+// metadata, ACLs and credentials reach the brokers asynchronously.
+func onEveryBroker(t testing.TB, adm *kadm.Client, within time.Duration, what string, check func(ctx context.Context, b *kgo.Broker) bool) {
 	t.Helper()
 	cl, err := kgo.NewClient(kgo.SeedBrokers(Bootstrap()...))
 	if err != nil {
@@ -134,23 +136,13 @@ func waitVisible(t testing.TB, adm *kadm.Client, name string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	deadline := time.Now().Add(10 * time.Second)
+	deadline := time.Now().Add(within)
 	for time.Now().Before(deadline) {
 		ok := true
 		for _, b := range md.Brokers {
-			req := kmsg.NewPtrMetadataRequest()
-			rt := kmsg.NewMetadataRequestTopic()
-			rt.Topic = kmsg.StringPtr(name)
-			req.Topics = append(req.Topics, rt)
-			resp, err := req.RequestWith(t.Context(), cl.Broker(int(b.NodeID)))
-			if err != nil || len(resp.Topics) != 1 || resp.Topics[0].ErrorCode != 0 {
+			if !check(t.Context(), cl.Broker(int(b.NodeID))) {
 				ok = false
 				break
-			}
-			for _, p := range resp.Topics[0].Partitions {
-				if p.Leader < 0 {
-					ok = false
-				}
 			}
 		}
 		if ok {
@@ -158,5 +150,72 @@ func waitVisible(t testing.TB, adm *kadm.Client, name string) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	t.Fatalf("topic %s did not reach every broker", name)
+	t.Fatalf("%s did not reach every broker", what)
+}
+
+func waitVisible(t testing.TB, adm *kadm.Client, name string) {
+	t.Helper()
+	onEveryBroker(t, adm, 10*time.Second, "topic "+name, func(ctx context.Context, b *kgo.Broker) bool {
+		req := kmsg.NewPtrMetadataRequest()
+		rt := kmsg.NewMetadataRequestTopic()
+		rt.Topic = kmsg.StringPtr(name)
+		req.Topics = append(req.Topics, rt)
+		resp, err := req.RequestWith(ctx, b)
+		if err != nil || len(resp.Topics) != 1 || resp.Topics[0].ErrorCode != 0 {
+			return false
+		}
+		for _, p := range resp.Topics[0].Partitions {
+			if p.Leader < 0 {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+// WaitACLs waits until every broker reports exactly want ACLs for principal.
+func WaitACLs(t testing.TB, adm *kadm.Client, principal string, want int) {
+	t.Helper()
+	onEveryBroker(t, adm, 10*time.Second, "ACLs for "+principal, func(ctx context.Context, b *kgo.Broker) bool {
+		req := kmsg.NewPtrDescribeACLsRequest()
+		req.ResourceType, req.ResourcePatternType, req.Operation, req.PermissionType =
+			kmsg.ACLResourceTypeAny, kmsg.ACLResourcePatternTypeAny, kmsg.ACLOperationAny, kmsg.ACLPermissionTypeAny
+		req.Principal = kmsg.StringPtr(principal)
+		resp, err := req.RequestWith(ctx, b)
+		if err != nil || resp.ErrorCode != 0 {
+			return false
+		}
+		n := 0
+		for _, r := range resp.Resources {
+			n += len(r.ACLs)
+		}
+		return n == want
+	})
+}
+
+// WaitSCRAMUsers waits until every broker has SCRAM-SHA-512 credentials for
+// users. The sandbox's init container adds them after the brokers report
+// healthy, so `docker compose up --wait` can return before they exist.
+func WaitSCRAMUsers(t testing.TB, adm *kadm.Client, users ...string) {
+	t.Helper()
+	onEveryBroker(t, adm, 60*time.Second, "SCRAM users", func(ctx context.Context, b *kgo.Broker) bool {
+		req := kmsg.NewPtrDescribeUserSCRAMCredentialsRequest()
+		for _, u := range users {
+			ru := kmsg.NewDescribeUserSCRAMCredentialsRequestUser()
+			ru.Name = u
+			req.Users = append(req.Users, ru)
+		}
+		resp, err := req.RequestWith(ctx, b)
+		if err != nil || resp.ErrorCode != 0 || len(resp.Results) != len(users) {
+			return false
+		}
+		for _, r := range resp.Results {
+			if r.ErrorCode != 0 || !slices.ContainsFunc(r.CredentialInfos, func(c kmsg.DescribeUserSCRAMCredentialsResponseResultCredentialInfo) bool {
+				return c.Mechanism == int8(kadm.ScramSha512)
+			}) {
+				return false
+			}
+		}
+		return true
+	})
 }

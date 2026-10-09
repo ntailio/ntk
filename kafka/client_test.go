@@ -14,7 +14,8 @@ import (
 )
 
 func TestSandboxProfiles(t *testing.T) {
-	testkit.Admin(t) // skips when the sandbox is down
+	adm := testkit.Admin(t) // skips when the sandbox is down
+	testkit.WaitSCRAMUsers(t, adm, "admin", "bob")
 
 	s, err := profile.Load(filepath.Join(testkit.RepoRoot(t), "sandbox", "profiles.json"))
 	if err != nil {
