@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -70,6 +71,9 @@ func TestProfileShowMasksSecrets(t *testing.T) {
 }
 
 func TestProfileSet(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("file modes do not apply on Windows")
+	}
 	path := filepath.Join(t.TempDir(), "profiles.json")
 	if err := os.WriteFile(path, []byte(testProfiles), 0o644); err != nil {
 		t.Fatal(err)
@@ -108,6 +112,9 @@ func TestExitCodes(t *testing.T) {
 }
 
 func TestInsecureModeWarning(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("file modes do not apply on Windows")
+	}
 	path := filepath.Join(t.TempDir(), "profiles.json")
 	if err := os.WriteFile(path, []byte(testProfiles), 0o644); err != nil {
 		t.Fatal(err)

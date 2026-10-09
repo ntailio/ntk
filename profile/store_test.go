@@ -132,7 +132,8 @@ func TestResolveFile(t *testing.T) {
 	if got := s.ResolveFile("certs/ca.crt"); got != filepath.Join("/repo", "sandbox", "certs", "ca.crt") {
 		t.Errorf("relative: got %s", got)
 	}
-	if got := s.ResolveFile("/abs/ca.crt"); got != "/abs/ca.crt" {
+	abs := filepath.Join(t.TempDir(), "ca.crt")
+	if got := s.ResolveFile(abs); got != abs {
 		t.Errorf("absolute: got %s", got)
 	}
 }

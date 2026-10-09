@@ -65,8 +65,9 @@ func TestACLs(t *testing.T) {
 
 	empty := filepath.Join(t.TempDir(), "empty.json")
 	os.WriteFile(empty, []byte(`[{"principal":"`+principal+`","allow":[{"operations":["READ"],"group":"`+group+`"}]}]`), 0o600)
-	e.ok("acl", "import", "-f", empty, "--prune", "--scope", principal, "-y")
+	// The plan is built from one broker's view, which may lag, so re-apply until it converges.
 	eventually(t, "only the group ACL after import --prune", func() bool {
+		e.ok("acl", "import", "-f", empty, "--prune", "--scope", principal, "-y")
 		list = nil
 		json.Unmarshal([]byte(e.out("acl", "list", "--principal", principal, "-o", "json")), &list)
 		return len(list) == 1 && list[0].ResourceType == "GROUP"
