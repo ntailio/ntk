@@ -92,6 +92,9 @@ func (a *app) confirmPlan(s *session, pl *plan.Plan) error {
 	}
 	typed := pl.Class == plan.Destructive && pl.Confirm != "" && (pl.Typed || slices.Contains(s.prof.Labels, "prod"))
 	if a.flags.yes {
+		if pl.Typed {
+			fmt.Fprintf(a.stderr, "%s %s", a.badge(s), indentPlan(pl))
+		}
 		if typed && a.flags.confirm != pl.Confirm {
 			why := fmt.Sprintf("profile %q is labelled prod", s.name)
 			if pl.Typed {

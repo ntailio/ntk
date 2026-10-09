@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -67,7 +68,7 @@ func TestTopicDeleteRegexAndPresets(t *testing.T) {
 	e.ok("topic", "create", a, b, "-P", "1", "--preset", "compacted")
 	contains(t, e.ok("topic", "config", a), "compact")
 	contains(t, e.ok("topic", "config", b), "compact")
-	e.ok("topic", "delete", "--regex", "^"+prefix, "-y")
+	e.ok("topic", "delete", "--regex", "^"+prefix, "-y", "--confirm", "delete 2 topics")
 	e.gone(a)
 	e.gone(b)
 	e.fails(exitcode.Usage, "topic", "create", testkit.Name(t, "x"), "--preset", "nope")
@@ -170,4 +171,21 @@ func TestCompletionTopics(t *testing.T) {
 	contains(t, out, name)
 	contains(t, e.ok("__complete", "c", name, "-P", ""), "0")
 	contains(t, e.ok("__complete", "-p", "sand"), "sandbox")
+}
+
+func TestTopicDeleteRegexNeedsConfirm(t *testing.T) {
+	e := newEnv(t, nil)
+	a := testkit.Topic(t, e.adm, "rx-a", 1)
+	b := testkit.Topic(t, e.adm, "rx-b", 1)
+	pattern := "^(" + regexp.QuoteMeta(a) + "|" + regexp.QuoteMeta(b) + ")$"
+
+	_, errOut := e.fails(exitcode.Usage, "topic", "delete", "--regex", pattern, "-y")
+	contains(t, errOut, a, b, `--confirm="delete 2 topics"`)
+	if got := e.ok("topic", "list", "-o", "name"); !strings.Contains(got, a) || !strings.Contains(got, b) {
+		t.Fatal("topics were deleted without --confirm")
+	}
+
+	e.ok("topic", "delete", "--regex", pattern, "-y", "--confirm", "delete 2 topics")
+	e.gone(a)
+	e.gone(b)
 }

@@ -354,6 +354,8 @@ func (a *app) newTopicDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// A pattern can match more than you expect: always show what it matched and make the user type it.
+			pl.Typed = pl.Typed || regex
 			return a.run(cmd.Context(), s, pl)
 		},
 	}
