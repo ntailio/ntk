@@ -7,7 +7,7 @@ ntk is a single static binary with no librdkafka or JVM.
 **Download the latest release (recommended).** Get the binary for your platform from the [latest release](https://github.com/ntailio/ntk/releases/latest): Linux (amd64, arm64, armv7), macOS (Intel and Apple silicon), Windows (amd64, arm64) or FreeBSD (amd64). Then put it on your `PATH`:
 
 ```sh
-sha256sum -c --ignore-missing ntk-*-checksums.txt     # optional: check the download
+sha256sum -c ntk-*-linux-amd64.sha256                # optional: check it, with the .sha256 next to it
 chmod +x ntk-*-linux-amd64 && sudo mv ntk-*-linux-amd64 /usr/local/bin/ntk
 ```
 

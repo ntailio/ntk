@@ -63,7 +63,7 @@ If you need somewhere to point it at, ntail has a [free tier](https://console.nt
 
 **[Download the latest release →](https://github.com/ntailio/ntk/releases/latest)**
 
-One self-contained binary for Linux (amd64, arm64, armv7), macOS (Intel and Apple silicon), Windows (amd64, arm64) or FreeBSD (amd64). Download the one for your platform, put it on your `PATH`, and you're done. Each release also has a checksums file to verify the download.
+One self-contained binary for Linux (amd64, arm64, armv7), macOS (Intel and Apple silicon), Windows (amd64, arm64) or FreeBSD (amd64). Download the one for your platform, put it on your `PATH`, and you're done. Each binary has a `.sha256` file next to it to verify the download.
 
 Prefer Docker or Go?
 

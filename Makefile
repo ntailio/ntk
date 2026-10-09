@@ -35,7 +35,7 @@ check: lint ## lint, then all tests
 
 DIST_TARGETS := linux/amd64 linux/arm64 linux/arm darwin/amd64 darwin/arm64 windows/amd64 windows/arm64 freebsd/amd64
 
-dist: ## Release binaries and checksums in dist/ (VERSION=v1.2.3)
+dist: ## Release binaries, each with a .sha256 file, in dist/ (VERSION=v1.2.3)
 	rm -rf dist && mkdir dist
 	@for t in $(DIST_TARGETS); do \
 		os=$${t%/*}; arch=$${t#*/}; name=$$arch; ext=; \
@@ -44,7 +44,7 @@ dist: ## Release binaries and checksums in dist/ (VERSION=v1.2.3)
 		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch GOARM=7 go build -trimpath -ldflags '$(LDFLAGS)' \
 			-o dist/ntk-$(VERSION)-$$os-$$name$$ext ./cmd/ntk || exit 1; \
 	done
-	cd dist && sha256sum ntk-* > checksums.tmp && mv checksums.tmp ntk-$(VERSION)-checksums.txt
+	cd dist && for f in ntk-*; do sha256sum "$$f" > "$$f.sha256"; done
 
 docker: ## Build the Docker image as ntk:dev
 	docker build --build-arg VERSION=$(VERSION) -t ntk:dev .

@@ -57,10 +57,12 @@ jobs:
           go-version-file: go.mod
       - name: Build
         run: make dist VERSION=${{ needs.prepare.outputs.version }}
+      - name: Collect the binaries' digests
+        run: cat dist/*.sha256 > subjects.txt
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: dist/ntk-*
+          subject-checksums: subjects.txt
       - uses: actions/upload-artifact@v7
         with:
           name: dist

@@ -18,7 +18,7 @@ The push starts [the release workflow](.github/workflows/release.yml):
 
 1. Checks the version, that the changelog is filled in, and that the tag doesn't exist yet.
 2. Runs the full CI: lint, unit tests on macOS and Windows, and integration tests against the sandbox.
-3. Builds a binary for each platform, plus `ntk-<version>-checksums.txt` and a build provenance attestation.
+3. Builds a binary for each platform, each with a `.sha256` file, plus a build provenance attestation for the binaries.
 4. Pushes `ghcr.io/ntailio/ntk:<version>` for linux/amd64 and linux/arm64, and moves `:latest` for stable versions only.
 5. Creates the GitHub release, which creates the tag `<version>` on the release commit. The release notes are the changelog, without its title and comments. Versions with a suffix like `-rc.1` are marked as pre-releases.
 6. Commits `changelog/<version>.md` to trunk, so trunk has every changelog.
@@ -52,4 +52,4 @@ git cherry-pick <fix>
 
 ## Installing the result
 
-Binaries and checksums are on the [releases page](https://github.com/ntailio/ntk/releases). Check a download with `sha256sum -c --ignore-missing ntk-<version>-checksums.txt` and verify where it came from with `gh attestation verify <file> --repo ntailio/ntk`.
+Binaries and checksums are on the [releases page](https://github.com/ntailio/ntk/releases). Check a download with `sha256sum -c ntk-<version>-<os>-<arch>.sha256` and verify where it came from with `gh attestation verify <file> --repo ntailio/ntk`.
