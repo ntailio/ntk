@@ -2,16 +2,16 @@
 
 ## Install
 
-ntk is a single static binary with no librdkafka or JVM. Pick one way:
+ntk is a single static binary with no librdkafka or JVM.
 
-**Download a binary** from the [releases page](https://github.com/ntailio/ntk/releases) for Linux, macOS, Windows or FreeBSD, then put it on your `PATH`:
+**Download the latest release (recommended).** Get the binary for your platform from the [latest release](https://github.com/ntailio/ntk/releases/latest): Linux, macOS, Windows or FreeBSD, on amd64 or arm64. Then put it on your `PATH`:
 
 ```sh
 sha256sum -c --ignore-missing ntk-*-checksums.txt     # optional: check the download
 chmod +x ntk-*-linux-amd64 && sudo mv ntk-*-linux-amd64 /usr/local/bin/ntk
 ```
 
-**Run it with Docker.** Mount your profiles, and use the host network to reach a cluster on `localhost`:
+**Or run it with Docker.** Mount your profiles, and use the host network to reach a cluster on `localhost`:
 
 ```sh
 docker run --rm -it -v ~/.config/ntk:/home/ntk/.config/ntk ghcr.io/ntailio/ntk topic list
@@ -20,7 +20,7 @@ docker run --rm -it --network host -v ~/.config/ntk:/home/ntk/.config/ntk ghcr.i
 
 `:latest` is the newest stable release; every version also has its own tag, like `ghcr.io/ntailio/ntk:v1.0.0`.
 
-**Build it with Go** 1.26 or newer:
+**Or build it with Go** 1.26 or newer:
 
 ```sh
 go install github.com/ntailio/ntk/cmd/ntk@latest

@@ -3,6 +3,7 @@
   <br>ntk - <a href="https://ntail.io">ntail</a> kafka management tool
 </h1>
   <p align="center">
+    <a href="https://github.com/ntailio/ntk/releases/latest"><img src="https://img.shields.io/github/v/release/ntailio/ntk?sort=semver&label=release" alt="latest release"></a>
     <a href="https://github.com/ntailio/ntk/actions/workflows/ci.yml"><img src="https://github.com/ntailio/ntk/actions/workflows/ci.yml/badge.svg?branch=trunk" alt="ci"></a>
     <br />
     A fast, friendly CLI and TUI for Apache Kafka.
@@ -60,13 +61,17 @@ If you need somewhere to point it at, ntail has a [free tier](https://console.nt
 
 ## Install
 
-Grab a single binary for your platform from the [releases page](https://github.com/ntailio/ntk/releases): Linux, macOS, Windows and FreeBSD, on amd64 and arm64. Each release has a checksums file.
+**[Download the latest release →](https://github.com/ntailio/ntk/releases/latest)**
+
+One self-contained binary for Linux, macOS, Windows or FreeBSD, on amd64 or arm64. Download the one for your platform, put it on your `PATH`, and you're done. Each release also has a checksums file to verify the download.
+
+Prefer Docker or Go?
 
 ```sh
-# or run it in Docker, with your profiles mounted
+# Docker, with your profiles mounted
 docker run --rm -it -v ~/.config/ntk:/home/ntk/.config/ntk ghcr.io/ntailio/ntk topic list
 
-# or build it with Go 1.26+
+# Go 1.26+
 go install github.com/ntailio/ntk/cmd/ntk@latest
 ```
 

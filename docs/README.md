@@ -2,6 +2,8 @@
 
 Short chapters on what ntk does and how to use it. Every command also has `--help`.
 
+New here? [Download the latest release](https://github.com/ntailio/ntk/releases/latest), then start with [Getting started](getting-started.md).
+
 1. [Getting started](getting-started.md): install, connect, first commands, completion
 2. [Profiles](profiles.md): clusters, auth, switching, production safety
 3. [Topics](topics.md): list, describe, create, configure, delete
