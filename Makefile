@@ -1,7 +1,7 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X github.com/factualtech/ntk/buildinfo.Version=$(VERSION)
 
-.PHONY: build install test test-short vet fmt check sandbox-up sandbox-down sandbox-reset demos
+.PHONY: build install test test-short vet lint fmt check sandbox-up sandbox-down sandbox-reset demos
 
 build: ## Build bin/ntk
 	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/ntk ./cmd/ntk
@@ -21,8 +21,15 @@ vet: ## go vet
 fmt: ## Format all Go files
 	gofmt -w .
 
-check: vet ## vet, formatting check, and tests
+lint: ## gofmt, go mod tidy, go vet (linux, darwin, windows), staticcheck
 	@test -z "$$(gofmt -l .)" || { echo "gofmt needed:"; gofmt -l .; exit 1; }
+	go mod tidy -diff
+	go vet ./...
+	GOOS=darwin go vet ./...
+	GOOS=windows go vet ./...
+	staticcheck ./...
+
+check: lint ## lint, then all tests
 	go test ./...
 
 sandbox-up: ## Start the sandbox cluster (spec/testing.md)

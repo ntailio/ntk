@@ -3,6 +3,8 @@
   <br>ntk
 </h1>
   <p align="center">
+    <a href="https://github.com/factualtech/ntk/actions/workflows/ci.yml"><img src="https://github.com/factualtech/ntk/actions/workflows/ci.yml/badge.svg?branch=trunk" alt="ci"></a>
+    <br />
     A fast, friendly CLI and TUI for Apache Kafka.
     <br />
     Inspect clusters, move messages, watch lag, and fix things, from one binary.

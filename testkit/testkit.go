@@ -90,6 +90,20 @@ func Topic(t testing.TB, adm *kadm.Client, purpose string, partitions int32) str
 	return name
 }
 
+// Disruptive skips unless NTK_TEST_DISRUPTIVE=1, then runs the test serially.
+// Stopping a broker breaks any test running alongside, so disruptive tests are
+// named TestDisruptive… and run on their own: go test -run '^TestDisruptive' ./...
+func Disruptive(t testing.TB) {
+	t.Helper()
+	if !strings.HasPrefix(t.Name(), "TestDisruptive") {
+		t.Fatalf("disruptive test %s must be named TestDisruptive… so it can run on its own", t.Name())
+	}
+	if os.Getenv("NTK_TEST_DISRUPTIVE") != "1" {
+		t.Skip("disruptive test (stops brokers): set NTK_TEST_DISRUPTIVE=1")
+	}
+	Serial(t)
+}
+
 func RepoRoot(t testing.TB) string {
 	t.Helper()
 	dir, err := os.Getwd()

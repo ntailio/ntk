@@ -346,6 +346,8 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 		return err
 	}
 	defer cl.Close()
+	// Guards stderr/stdout: deliveries and the stop note are written from other goroutines.
+	var mu sync.Mutex
 	if in.kind == "unix" && !single {
 		l, err := produce.Listen(in.path)
 		if errors.Is(err, produce.ErrUnixUnsupported) {
@@ -358,13 +360,14 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 		src = l.Source(f.meta, base, keep, f.idle)
 		fmt.Fprintf(a.stderr, "Listening on %s (ctrl-c to stop)\n", in.path)
 		stopNote := context.AfterFunc(cmd.Context(), func() {
+			mu.Lock()
+			defer mu.Unlock()
 			fmt.Fprintln(a.stderr, "Stopping: producing what was received (interrupt again to quit immediately)")
 		})
 		defer stopNote()
 	}
 	src = produce.Limit(src, f.limit)
 
-	var mu sync.Mutex
 	jsonOut := a.flags.output == "json" || a.flags.output == "jsonl"
 	deliver := func(d produce.Delivery) {
 		mu.Lock()
@@ -381,6 +384,8 @@ func (a *app) runProduce(cmd *cobra.Command, topic string, f produceFlags) error
 	}
 	stats, err := produce.Run(cmd.Context(), cl.Client, src, f.opts, deliver)
 	if bulk && !jsonOut {
+		mu.Lock()
+		defer mu.Unlock()
 		rate := float64(stats.Produced) / max(stats.Elapsed.Seconds(), 0.001)
 		topics := strings.Join(slices.Sorted(maps.Keys(stats.Topics)), ", ")
 		if topics == "" {

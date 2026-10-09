@@ -28,12 +28,3 @@ func Serial(t testing.TB) {
 		f.Close()
 	})
 }
-
-// Disruptive skips unless NTK_TEST_DISRUPTIVE=1, then runs the test serially.
-func Disruptive(t testing.TB) {
-	t.Helper()
-	if os.Getenv("NTK_TEST_DISRUPTIVE") != "1" {
-		t.Skip("disruptive test (stops brokers): set NTK_TEST_DISRUPTIVE=1")
-	}
-	Serial(t)
-}

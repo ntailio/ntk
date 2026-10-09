@@ -268,7 +268,7 @@ func TestHangingTransaction(t *testing.T) {
 	})
 }
 
-func TestHealthWithBrokerDown(t *testing.T) {
+func TestDisruptiveHealthWithBrokerDown(t *testing.T) {
 	testkit.Disruptive(t)
 	e := &env{t: t, adm: testkit.Admin(t), path: testkit.Profiles(t, nil)}
 	topic := testkit.Topic(t, e.adm, "down", 3)

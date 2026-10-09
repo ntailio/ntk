@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -79,7 +80,12 @@ func TestUnixOversize(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("no unixgram on Windows")
 	}
-	path := filepath.Join(t.TempDir(), "s.sock")
+	dir, err := os.MkdirTemp("", "ntk") // t.TempDir() can exceed macOS's 104-byte socket path limit
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	path := filepath.Join(dir, "s.sock")
 	if _, err := DialUnix(context.Background(), path, false, false); err == nil {
 		t.Fatal("expected an error when nothing listens")
 	}

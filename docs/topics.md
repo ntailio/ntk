@@ -35,7 +35,8 @@ Changes are validated by the broker before anything is applied, and risky ones c
 ```sh
 ntk topic add-partitions orders 24          # to a total of 24
 ntk topic truncate orders --before-time -7d  # delete records older than 7 days
-ntk topic reassign plan orders --brokers 1,2,3 | ntk topic reassign apply -f -
+ntk topic reassign plan --topics orders --brokers 1,2,3 -o json > plan.json
+ntk topic reassign apply plan.json --throttle 50MiB/s
 ntk topic elect-leaders orders              # preferred leader election
 ```
 

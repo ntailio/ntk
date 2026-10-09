@@ -147,7 +147,7 @@ Some features affect the whole cluster. These tests call `testkit.Serial(t)` (a 
 - `<default>` quota entities
 - cluster-wide health assertions (e.g. "no under-replicated partitions"). Where possible, scope assertions to the test's own topics.
 
-**Disruptive tests** that stop brokers (URP, offline partitions, leader election, health) call `testkit.Disruptive(t)` and only run with `NTK_TEST_DISRUPTIVE=1`. They're serial, and in cleanup they restart the broker and wait until all ISRs are full again.
+**Disruptive tests** that stop brokers (URP, offline partitions, leader election, health) call `testkit.Disruptive(t)` and only run with `NTK_TEST_DISRUPTIVE=1`. They're serial, and in cleanup they restart the broker and wait until all ISRs are full again. A stopped broker breaks any other test running at the same time (in any package), so they're named `TestDisruptive…` (`testkit.Disruptive` enforces it) and run on their own.
 
 ### Running
 
@@ -155,7 +155,7 @@ Some features affect the whole cluster. These tests call `testkit.Serial(t)` (a 
 docker compose up -d --wait
 go test ./...                       # unit + integration
 go test -short ./...                # unit only; integration tests skip
-NTK_TEST_DISRUPTIVE=1 go test ./... # also broker stop/start tests
+NTK_TEST_DISRUPTIVE=1 go test -run '^TestDisruptive' ./...   # broker stop/start tests, on their own
 ```
 
 Integration tests **skip** (not fail) with a clear message if the sandbox isn't reachable. `NTK_TEST_BOOTSTRAP` overrides the default `localhost:19101,localhost:19201,localhost:19301`.

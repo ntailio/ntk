@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches: [trunk]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Install tools
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@2026.2.1
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Lint
+        run: make lint
+      - name: Vulnerabilities
+        run: govulncheck ./...
+      - name: Cross-compile
+        run: |
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            echo "::group::$target"
+            GOOS=${target%/*} GOARCH=${target#*/} go build -o /dev/null ./cmd/ntk
+            echo "::endgroup::"
+          done
+
+  unit:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Unit tests
+        run: go test -short -race ./...
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Start the sandbox
+        run: docker compose up -d --wait --wait-timeout 180
+      - name: Tests
+        run: go test -race -count=1 ./...
+      - name: Disruptive tests (stop brokers, so they run alone)
+        env:
+          NTK_TEST_DISRUPTIVE: "1"
+        run: go test -race -count=1 -run '^TestDisruptive' ./...
+      - name: Sandbox logs
+        if: failure()
+        run: docker compose logs --tail 200
