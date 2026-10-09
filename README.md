@@ -1,6 +1,6 @@
 <h1>
 <p align="center">
-  <br>ntk
+  <br>ntk - <a href="https://ntail.io">ntail</a> kafka management tool
 </h1>
   <p align="center">
     <a href="https://github.com/ntailio/ntk/actions/workflows/ci.yml"><img src="https://github.com/ntailio/ntk/actions/workflows/ci.yml/badge.svg?branch=trunk" alt="ci"></a>
@@ -9,6 +9,8 @@
     <br />
     Inspect clusters, move messages, watch lag, and fix things, from one binary.
     <br />
+    <a href="docs/getting-started.md">Getting Started</a>
+    ·
     <a href="#about">About</a>
     ·
     <a href="#install">Install</a>
