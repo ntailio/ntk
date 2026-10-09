@@ -45,16 +45,6 @@ mkdir -p changelog
 cat >"changelog/$version.md" <<EOF
 # ntk $version
 
-<!--
-Write for people who use ntk. Say what changed and why it matters to them,
-group related changes, and lead with anything that breaks existing use.
-Delete the sections you don't need. Comments like this one are left out of
-the release notes. See RELEASING.md.
-
-Commits $since:
-$commits
--->
-
 One or two sentences on what this release is about.
 
 ## Breaking changes
@@ -70,6 +60,9 @@ One or two sentences on what this release is about.
 - What was wrong, and what happens now.
 EOF
 
+echo "Commits $since, to help write the changelog (not saved anywhere):"
+echo "$commits"
+echo
 echo "On release/$version with changelog/$version.md."
 echo "Write the changelog, commit it, then push the branch to release:"
 echo "  git push -u origin release/$version"
