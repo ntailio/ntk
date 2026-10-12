@@ -13,7 +13,7 @@ ntk profile create ci --bootstrap kafka:9093 --tls --ca-file ca.pem \
     --sasl scram-sha-512 --username ci --password-stdin < secret.txt
 ```
 
-Supported: PLAINTEXT, TLS (with system or custom CA), mTLS with a client certificate (encrypted keys too), SASL PLAIN, SCRAM-SHA-256, SCRAM-SHA-512 and OAUTHBEARER, in any combination with TLS.
+Supported: PLAINTEXT, TLS (with system or custom CA), mTLS with a client certificate (encrypted keys too), SASL PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, OAUTHBEARER and AWS MSK IAM, in any combination with TLS.
 
 ### OAUTHBEARER
 
@@ -40,6 +40,20 @@ ntk profile edit cloud --set auth.oauth.extensions.logicalCluster=lkc-123 --set 
 ```
 
 `ntk profile test` shows where the token came from, when it expires and who it's for, and `whoami` shows the principal as `User:` plus the token's `sub` claim.
+
+### AWS MSK IAM
+
+For Amazon MSK clusters that use IAM access control. Point the profile at the cluster's IAM bootstrap servers (port 9098); TLS is required.
+
+```sh
+ntk profile create msk --bootstrap b-1.demo.abc123.c2.kafka.eu-west-1.amazonaws.com:9098 --tls --sasl aws-msk-iam
+ntk profile create msk-admin --bootstrap b-1.demo.abc123.c2.kafka.eu-west-1.amazonaws.com:9098 --tls --sasl aws-msk-iam \
+    --aws-profile prod --aws-role-arn arn:aws:iam::123456789012:role/kafka-admin
+```
+
+ntk finds credentials the same way the AWS CLI does: environment variables, your `~/.aws` profiles (including SSO, so `aws sso login` works), and EC2, ECS or EKS roles. `--aws-profile` picks a named profile and `--aws-role-arn` assumes a role on top. Temporary credentials are refreshed automatically.
+
+With MSK IAM, what you're allowed to do comes from IAM policies, not Kafka ACLs, so the ACL commands don't apply. `ntk profile test` shows which credentials it found before connecting.
 
 The wizard tests the connection before saving. You can rerun that test any time, step by step:
 

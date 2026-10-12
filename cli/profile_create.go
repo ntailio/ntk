@@ -42,6 +42,7 @@ type profileInput struct {
 	color       string
 	deletion    string
 	oauth       profile.OAuth
+	aws         profile.AWS
 }
 
 const (
@@ -87,6 +88,12 @@ func (in *profileInput) build() (*profile.Profile, error) {
 		p.TLS = t
 	}
 	switch {
+	case in.usesSASL() && in.mechanism == "aws-msk-iam":
+		p.Auth = profile.Auth{Mechanism: in.mechanism}
+		if in.aws != (profile.AWS{}) {
+			a := in.aws
+			p.Auth.AWS = &a
+		}
 	case in.usesSASL() && in.mechanism == "oauthbearer":
 		o := in.oauth
 		p.Auth = profile.Auth{Mechanism: in.mechanism, OAuth: &o}
@@ -251,6 +258,8 @@ func (a *app) newProfileCreateCmd() *cobra.Command {
 	f.StringVar(&in.oauth.Audience, "oauth-audience", "", "oauthbearer: audience to request")
 	f.StringVar(&in.oauth.TokenFile, "oauth-token-file", "", "oauthbearer: read the token from this file instead")
 	f.StringVar(&in.oauth.TokenCommand, "oauth-token-command", "", "oauthbearer: run this command and use what it prints as the token")
+	f.StringVar(&in.aws.Profile, "aws-profile", "", "aws-msk-iam: AWS profile to use (default: the SDK's credential chain)")
+	f.StringVar(&in.aws.RoleARN, "aws-role-arn", "", "aws-msk-iam: role to assume")
 	f.StringVar(&in.principal, "principal", "", "expected principal, e.g. User:bob")
 	f.BoolVar(&in.readOnly, "read-only", false, "refuse all write operations with this profile")
 	f.StringVar(&in.color, "color", "", "badge colour: a hex like #ff00ee, or red, green, yellow, blue, magenta, cyan (default: one no other profile uses)")
@@ -341,16 +350,30 @@ func (a *app) profileWizard(ctx context.Context, s *profile.Store, in *profileIn
 	}
 	if in.usesSASL() {
 		if err := a.runForm(ctx, huh.NewForm(huh.NewGroup(huh.NewSelect[string]().Title("SASL mechanism").
-			Options(huh.NewOptions("scram-sha-512", "scram-sha-256", "plain", "oauthbearer")...).Value(&in.mechanism)))); err != nil {
+			Options(huh.NewOptions("scram-sha-512", "scram-sha-256", "plain", "oauthbearer", "aws-msk-iam")...).Value(&in.mechanism)))); err != nil {
 			return err
+		}
+		if in.mechanism == "aws-msk-iam" && in.security == secSASLPlaintext {
+			in.security = secSASLTLS
 		}
 		oauthFields, err := a.oauthWizard(ctx, in)
 		if err != nil {
 			return err
 		}
-		if in.mechanism == "oauthbearer" {
+		switch in.mechanism {
+		case "oauthbearer":
 			fields = append(fields, oauthFields...)
-		} else {
+		case "aws-msk-iam":
+			fields = append(fields,
+				huh.NewInput().Title("AWS profile").Description("optional; empty uses the usual AWS credential chain").Value(&in.aws.Profile),
+				huh.NewInput().Title("Role to assume").Description("optional, an IAM role ARN").Value(&in.aws.RoleARN).
+					Validate(func(v string) error {
+						if v != "" && !strings.HasPrefix(v, "arn:") {
+							return errors.New("a role ARN looks like arn:aws:iam::123456789012:role/name")
+						}
+						return nil
+					}))
+		default:
 			fields = append(fields,
 				huh.NewInput().Title("Username").Value(&in.username).Validate(huh.ValidateNotEmpty()),
 				huh.NewInput().Title("Password").EchoMode(huh.EchoModePassword).Value(&in.password).

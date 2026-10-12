@@ -36,7 +36,7 @@ ntk keeps connection details in **profiles**, so you never type bootstrap server
 ntk profile create
 ```
 
-The wizard asks for a name, bootstrap servers, the security setup (plaintext, TLS, mTLS, SASL PLAIN, SCRAM or OAUTHBEARER), tests the connection, and saves. Profiles live in `~/.config/ntk/profiles.json`, created with mode `0600` because it holds secrets.
+The wizard asks for a name, bootstrap servers, the security setup (plaintext, TLS, mTLS, SASL PLAIN, SCRAM, OAUTHBEARER or AWS MSK IAM), tests the connection, and saves. Profiles live in `~/.config/ntk/profiles.json`, created with mode `0600` because it holds secrets.
 
 Have a Java `client.properties` already? Import it:
 

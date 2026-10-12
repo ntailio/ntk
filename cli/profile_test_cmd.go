@@ -42,6 +42,13 @@ func roughly(d time.Duration) string {
 	return fmt.Sprintf("%dm", int(d.Minutes()))
 }
 
+func maskKey(k string) string {
+	if len(k) <= 8 {
+		return "****"
+	}
+	return k[:4] + "…" + k[len(k)-4:]
+}
+
 func tokenHint(o *profile.OAuth) string {
 	switch {
 	case o.TokenFile != "":
@@ -166,6 +173,14 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 		tokenSub = t.Subject
 	}
 
+	if p.Auth.Mechanism == "aws-msk-iam" {
+		creds, err := kafka.AWSCredentials(ctx, p.Auth)
+		if err != nil {
+			return fail(exitcode.Connection, "AWS", err.Error(), "check auth.aws.profile and auth.aws.role_arn, or log in with `aws sso login`")
+		}
+		ok("AWS", "credentials %s from %s", maskKey(creds.AccessKeyID), creds.Source)
+	}
+
 	cl, err := kafka.NewClient(p, s.ResolveFile)
 	if err != nil {
 		return fail(exitcode.Usage, "Client", err.Error(), "")
@@ -176,6 +191,8 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 	md, err := cl.Admin.BrokerMetadata(ctx)
 	if err != nil {
 		switch {
+		case errors.Is(err, kerr.SaslAuthenticationFailed) && p.Auth.Mechanism == "aws-msk-iam":
+			return fail(exitcode.Connection, "SASL", err.Error(), "MSK rejected the IAM credentials: the IAM policy must allow kafka-cluster:Connect, and the bootstrap servers must be MSK's IAM port (9098)")
 		case errors.Is(err, kerr.SaslAuthenticationFailed) && p.Auth.Mechanism == "oauthbearer":
 			return fail(exitcode.Connection, "SASL", err.Error(), "the broker rejected the token: check its scope or audience, and auth.oauth.extensions if the cluster needs them")
 		case errors.Is(err, kerr.SaslAuthenticationFailed):
@@ -196,7 +213,7 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 	switch {
 	case p.Auth.Mechanism == "oauthbearer" && tokenSub != "":
 		ok("SASL", "%s as %s", p.Auth.Mechanism, tokenSub)
-	case p.Auth.Mechanism == "oauthbearer":
+	case p.Auth.Mechanism == "oauthbearer" || p.Auth.Mechanism == "aws-msk-iam":
 		ok("SASL", "%s", p.Auth.Mechanism)
 	case p.Auth.Mechanism != "none":
 		ok("SASL", "%s as %s", p.Auth.Mechanism, p.Auth.Username)
@@ -224,6 +241,9 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 		if pr, err := kafka.CertPrincipal(p.TLS, s.ResolveFile); err == nil {
 			principal, how = pr, "derived from the client certificate; ssl.principal.mapping.rules may change it"
 		}
+	}
+	if principal == "" && p.Auth.Mechanism == "aws-msk-iam" {
+		principal, how = "your IAM identity", "MSK authorizes it with IAM policies, not Kafka ACLs"
 	}
 	if principal == "" && tokenSub != "" {
 		principal, how = "User:"+tokenSub, "derived from the token's sub claim; the broker's sasl.oauthbearer.sub.claim.name may differ"

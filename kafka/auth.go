@@ -37,6 +37,7 @@ var saslMechanisms = map[string]func(profile.Auth, func(string) string) (sasl.Me
 		return scram.Auth{User: a.Username, Pass: a.Password}.AsSha512Mechanism(), nil
 	},
 	"oauthbearer": oauthMechanism,
+	"aws-msk-iam": awsMechanism,
 }
 
 func Mechanisms() []string {

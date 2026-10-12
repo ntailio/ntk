@@ -30,6 +30,9 @@ func inputFromProfile(name string, p *profile.Profile) profileInput {
 	if p.Auth.OAuth != nil {
 		in.oauth = *p.Auth.OAuth
 	}
+	if p.Auth.AWS != nil {
+		in.aws = *p.Auth.AWS
+	}
 	if in.mechanism == "none" || in.mechanism == "" {
 		in.mechanism = "scram-sha-512"
 	}
@@ -293,7 +296,9 @@ func fromProperties(r io.Reader, in *profileInput) error {
 	if strings.HasPrefix(proto, "SASL") {
 		switch m := strings.ToUpper(props["sasl.mechanism"]); m {
 		case "", "GSSAPI":
-			return fmt.Errorf("sasl.mechanism %q is not supported yet (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, OAUTHBEARER)", m)
+			return fmt.Errorf("sasl.mechanism %q is not supported yet (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, OAUTHBEARER, AWS_MSK_IAM)", m)
+		case "AWS_MSK_IAM":
+			in.mechanism = "aws-msk-iam"
 		case "PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512", "OAUTHBEARER":
 			in.mechanism = strings.ToLower(m)
 			in.oauth.TokenEndpoint = props["sasl.oauthbearer.token.endpoint.url"]
@@ -307,6 +312,10 @@ func fromProperties(r io.Reader, in *profileInput) error {
 				in.username = v
 			case k == "password":
 				in.password = v
+			case k == "awsProfileName":
+				in.aws.Profile = v
+			case k == "awsRoleArn":
+				in.aws.RoleARN = v
 			case k == "clientId":
 				in.oauth.ClientID = v
 			case k == "clientSecret":

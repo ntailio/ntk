@@ -292,3 +292,32 @@ func TestOAuthFromPropertiesAndFlags(t *testing.T) {
 		t.Errorf("two token sources: exit %d, want %d", code, exitcode.Usage)
 	}
 }
+
+func TestMSKIAMProfiles(t *testing.T) {
+	props := "bootstrap.servers=b-1.demo.kafka.eu-west-1.amazonaws.com:9098\nsecurity.protocol=SASL_SSL\nsasl.mechanism=AWS_MSK_IAM\n" +
+		"sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required awsProfileName=\"dev\" awsRoleArn=\"arn:aws:iam::123456789012:role/kafka\";\n" +
+		"sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler\n"
+	var in profileInput
+	if err := fromProperties(strings.NewReader(props), &in); err != nil {
+		t.Fatal(err)
+	}
+	p, err := in.build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Auth.Mechanism != "aws-msk-iam" || p.Auth.AWS == nil || p.Auth.AWS.Profile != "dev" || p.Auth.AWS.RoleARN != "arn:aws:iam::123456789012:role/kafka" || !p.TLS.On() {
+		t.Errorf("imported = %+v %+v", p.Auth, p.Auth.AWS)
+	}
+
+	path := filepath.Join(t.TempDir(), "profiles.json")
+	if _, errOut, code := runWith(t, path, "profile", "create", "msk", "--bootstrap", "b-1.msk:9098", "--tls", "--no-test",
+		"--sasl", "aws-msk-iam", "--aws-profile", "prod"); code != 0 {
+		t.Fatalf("create: %d %s", code, errOut)
+	}
+	if _, _, code := runWith(t, path, "profile", "create", "plain-msk", "--bootstrap", "b-1.msk:9098", "--no-test", "--sasl", "aws-msk-iam"); code != exitcode.Usage {
+		t.Errorf("aws-msk-iam without TLS: exit %d, want %d", code, exitcode.Usage)
+	}
+	if got := maskKey("AKIAIOSFODNN7EXAMPLE"); got != "AKIA…MPLE" {
+		t.Errorf("maskKey = %q", got)
+	}
+}

@@ -45,7 +45,7 @@ ntk is the tool you reach for when you need to look at a Kafka cluster, right no
 
 A few ideas run through the whole tool:
 
-- **Profiles, not flags.** Connection details live in one file, with PLAINTEXT, TLS, mTLS, SASL PLAIN, SCRAM and OAUTHBEARER. `ntk -p prod` is the whole incantation, and a read-only profile makes mistakes hard.
+- **Profiles, not flags.** Connection details live in one file, with PLAINTEXT, TLS, mTLS, SASL PLAIN, SCRAM, OAUTHBEARER and AWS MSK IAM. `ntk -p prod` is the whole incantation, and a read-only profile makes mistakes hard.
 - **Bytes in, bytes out.** ntk never decodes, re-encodes or pretty-prints a message. What it gives you is what's in the log. For JSON, Avro or anything else, pipe it to the tool that understands it, or run one per message with `-o 'exec:jq .'`.
 - **A plan before every change.** Creating, deleting, resetting, granting: you see the exact effect first. `--dry-run` works on every mutating command, and a saved plan can be applied later.
 - **Watch without agents.** Throughput, lag, time lag and stuck consumers are computed from offsets, so monitoring works on any cluster, with nothing installed on the brokers.
@@ -127,8 +127,8 @@ ntk is young and under active development. It's in use against real clusters, an
 | ACLs with recipes, SCRAM users, quotas, principal view | ✅ |
 | Transactions: hanging detection and abort | ✅ |
 | Terminal UI | ✅ |
-| Auth: PLAINTEXT, TLS, mTLS, SASL PLAIN, SCRAM-SHA-256/512, OAUTHBEARER | ✅ |
-| Auth: AWS MSK IAM, Kerberos | ❌ |
+| Auth: PLAINTEXT, TLS, mTLS, SASL PLAIN, SCRAM-SHA-256/512, OAUTHBEARER, AWS MSK IAM | ✅ |
+| Auth: Kerberos | ❌ |
 
 Message decoding and Schema Registry support are intentionally not on the roadmap.
 

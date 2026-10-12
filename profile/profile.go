@@ -68,6 +68,14 @@ type Auth struct {
 	Username  string `json:"username,omitempty"`
 	Password  string `json:"password,omitempty"`
 	OAuth     *OAuth `json:"oauth,omitempty"`
+	AWS       *AWS   `json:"aws,omitempty"`
+}
+
+// AWS picks the credentials for aws-msk-iam. Without it, the AWS SDK's default
+// chain applies: environment, ~/.aws profiles, SSO, and EC2, ECS or EKS roles.
+type AWS struct {
+	Profile string `json:"profile,omitempty"`
+	RoleARN string `json:"role_arn,omitempty"`
 }
 
 // OAuth is where an OAUTHBEARER token comes from: client credentials
@@ -202,6 +210,9 @@ func (p *Profile) Validate() error {
 	}
 	if p.Auth.Mechanism == "" {
 		errs = append(errs, errors.New(`auth.mechanism: required (use "none" for no SASL)`))
+	}
+	if p.Auth.Mechanism == "aws-msk-iam" && !p.TLS.On() {
+		errs = append(errs, errors.New("auth: aws-msk-iam needs TLS: MSK's IAM listener only accepts TLS (set tls.enabled)"))
 	}
 	if p.Auth.Mechanism == "oauthbearer" {
 		o := p.Auth.OAuth

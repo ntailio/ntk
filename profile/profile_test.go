@@ -5,6 +5,7 @@ package profile
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
@@ -120,5 +121,16 @@ func TestOAuthValidation(t *testing.T) {
 	p := base(&OAuth{TokenEndpoint: "https://idp/token", ClientID: "ntk", ClientSecret: "s3cret"})
 	if r := p.Redacted(); r.Auth.OAuth.ClientSecret == "s3cret" || p.Auth.OAuth.ClientSecret != "s3cret" {
 		t.Errorf("Redacted should mask a copy: %q / %q", r.Auth.OAuth.ClientSecret, p.Auth.OAuth.ClientSecret)
+	}
+}
+
+func TestMSKIAMNeedsTLS(t *testing.T) {
+	p := &Profile{BootstrapServers: []string{"b-1.msk:9098"}, Auth: Auth{Mechanism: "aws-msk-iam"}}
+	if err := p.Validate(); err == nil || !strings.Contains(err.Error(), "TLS") {
+		t.Errorf("without TLS: %v", err)
+	}
+	p.TLS = &TLS{Enabled: true}
+	if err := p.Validate(); err != nil {
+		t.Errorf("with TLS: %v", err)
 	}
 }
