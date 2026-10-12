@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,6 +41,7 @@ type profileInput struct {
 	readOnly    bool
 	color       string
 	deletion    string
+	oauth       profile.OAuth
 }
 
 const (
@@ -84,7 +86,11 @@ func (in *profileInput) build() (*profile.Profile, error) {
 		}
 		p.TLS = t
 	}
-	if in.usesSASL() {
+	switch {
+	case in.usesSASL() && in.mechanism == "oauthbearer":
+		o := in.oauth
+		p.Auth = profile.Auth{Mechanism: in.mechanism, OAuth: &o}
+	case in.usesSASL():
 		p.Auth = profile.Auth{Mechanism: in.mechanism, Username: in.username, Password: in.password}
 	}
 	return p, p.Validate()
@@ -95,6 +101,7 @@ func (a *app) newProfileCreateCmd() *cobra.Command {
 		in                              profileInput
 		useTLS                          bool
 		passwordStdin, keyPasswordStdin bool
+		clientSecretStdin               bool
 		activate                        bool
 		noTest                          bool
 		properties                      string
@@ -139,8 +146,21 @@ func (a *app) newProfileCreateCmd() *cobra.Command {
 				if properties == "" {
 					in.security = flagSecurity(useTLS, in)
 				}
-				if passwordStdin && keyPasswordStdin {
-					return usageErr("--password-stdin and --key-password-stdin can't both read stdin")
+				stdins := 0
+				for _, on := range []bool{passwordStdin, keyPasswordStdin, clientSecretStdin} {
+					if on {
+						stdins++
+					}
+				}
+				if stdins > 1 {
+					return usageErr("only one of --password-stdin, --key-password-stdin and --oauth-client-secret-stdin can read stdin")
+				}
+				if clientSecretStdin {
+					if in.oauth.ClientSecret, err = readSecret(a.stdin); err != nil {
+						return err
+					}
+				} else if cmd.Flags().Changed("oauth-client-secret") {
+					fmt.Fprintln(a.stderr, "warning: --oauth-client-secret may end up in your shell history; prefer --oauth-client-secret-stdin")
 				}
 				if passwordStdin {
 					if in.password, err = readSecret(a.stdin); err != nil {
@@ -223,6 +243,14 @@ func (a *app) newProfileCreateCmd() *cobra.Command {
 	f.StringVar(&in.username, "username", "", "SASL username")
 	f.StringVar(&in.password, "password", "", "SASL password (prefer --password-stdin)")
 	f.BoolVar(&passwordStdin, "password-stdin", false, "read the SASL password from stdin")
+	f.StringVar(&in.oauth.TokenEndpoint, "oauth-token-endpoint", "", "oauthbearer: token endpoint for client credentials")
+	f.StringVar(&in.oauth.ClientID, "oauth-client-id", "", "oauthbearer: client id")
+	f.StringVar(&in.oauth.ClientSecret, "oauth-client-secret", "", "oauthbearer: client secret (prefer --oauth-client-secret-stdin)")
+	f.BoolVar(&clientSecretStdin, "oauth-client-secret-stdin", false, "oauthbearer: read the client secret from stdin")
+	f.StringVar(&in.oauth.Scope, "oauth-scope", "", "oauthbearer: scopes to request, space-separated")
+	f.StringVar(&in.oauth.Audience, "oauth-audience", "", "oauthbearer: audience to request")
+	f.StringVar(&in.oauth.TokenFile, "oauth-token-file", "", "oauthbearer: read the token from this file instead")
+	f.StringVar(&in.oauth.TokenCommand, "oauth-token-command", "", "oauthbearer: run this command and use what it prints as the token")
 	f.StringVar(&in.principal, "principal", "", "expected principal, e.g. User:bob")
 	f.BoolVar(&in.readOnly, "read-only", false, "refuse all write operations with this profile")
 	f.StringVar(&in.color, "color", "", "badge colour: a hex like #ff00ee, or red, green, yellow, blue, magenta, cyan (default: one no other profile uses)")
@@ -312,12 +340,22 @@ func (a *app) profileWizard(ctx context.Context, s *profile.Store, in *profileIn
 			}))
 	}
 	if in.usesSASL() {
-		fields = append(fields,
-			huh.NewSelect[string]().Title("SASL mechanism").
-				Options(huh.NewOptions("scram-sha-512", "scram-sha-256", "plain")...).Value(&in.mechanism),
-			huh.NewInput().Title("Username").Value(&in.username).Validate(huh.ValidateNotEmpty()),
-			huh.NewInput().Title("Password").EchoMode(huh.EchoModePassword).Value(&in.password).
-				Validate(huh.ValidateNotEmpty()))
+		if err := a.runForm(ctx, huh.NewForm(huh.NewGroup(huh.NewSelect[string]().Title("SASL mechanism").
+			Options(huh.NewOptions("scram-sha-512", "scram-sha-256", "plain", "oauthbearer")...).Value(&in.mechanism)))); err != nil {
+			return err
+		}
+		oauthFields, err := a.oauthWizard(ctx, in)
+		if err != nil {
+			return err
+		}
+		if in.mechanism == "oauthbearer" {
+			fields = append(fields, oauthFields...)
+		} else {
+			fields = append(fields,
+				huh.NewInput().Title("Username").Value(&in.username).Validate(huh.ValidateNotEmpty()),
+				huh.NewInput().Title("Password").EchoMode(huh.EchoModePassword).Value(&in.password).
+					Validate(huh.ValidateNotEmpty()))
+		}
 	}
 	fields = append(fields,
 		huh.NewInput().Title("Principal").Description("optional, e.g. User:bob (derived from the SASL username if empty)").
@@ -329,6 +367,51 @@ func (a *app) profileWizard(ctx context.Context, s *profile.Store, in *profileIn
 				huh.NewOption("never: just run them", profile.DeletionNever)).
 			Value(&in.deletion))
 	return a.runForm(ctx, huh.NewForm(huh.NewGroup(fields...)))
+}
+
+// oauthWizard asks for the token source, then returns the fields for it.
+func (a *app) oauthWizard(ctx context.Context, in *profileInput) ([]huh.Field, error) {
+	if in.mechanism != "oauthbearer" {
+		return nil, nil
+	}
+	o := &in.oauth
+	source := "credentials"
+	switch {
+	case o.TokenFile != "":
+		source = "file"
+	case o.TokenCommand != "":
+		source = "command"
+	}
+	if err := a.runForm(ctx, huh.NewForm(huh.NewGroup(huh.NewSelect[string]().Title("Where does the token come from?").Options(
+		huh.NewOption("client credentials: ntk fetches it from a token endpoint", "credentials"),
+		huh.NewOption("a file another tool keeps up to date", "file"),
+		huh.NewOption("a command that prints it", "command"),
+	).Value(&source)))); err != nil {
+		return nil, err
+	}
+	switch source {
+	case "file":
+		o.TokenEndpoint, o.ClientID, o.ClientSecret, o.TokenCommand = "", "", "", ""
+		return []huh.Field{huh.NewInput().Title("Token file").Value(&o.TokenFile).Validate(requiredFile)}, nil
+	case "command":
+		o.TokenEndpoint, o.ClientID, o.ClientSecret, o.TokenFile = "", "", "", ""
+		return []huh.Field{huh.NewInput().Title("Token command").Description("run with sh -c; whatever it prints is the token").
+			Value(&o.TokenCommand).Validate(huh.ValidateNotEmpty())}, nil
+	}
+	o.TokenFile, o.TokenCommand = "", ""
+	return []huh.Field{
+		huh.NewInput().Title("Token endpoint").Description("e.g. https://idp.example.com/oauth2/token").Value(&o.TokenEndpoint).
+			Validate(func(v string) error {
+				if u, err := url.Parse(v); err != nil || u.Scheme == "" || u.Host == "" {
+					return errors.New("enter a full URL")
+				}
+				return nil
+			}),
+		huh.NewInput().Title("Client id").Value(&o.ClientID).Validate(huh.ValidateNotEmpty()),
+		huh.NewInput().Title("Client secret").EchoMode(huh.EchoModePassword).Value(&o.ClientSecret).Validate(huh.ValidateNotEmpty()),
+		huh.NewInput().Title("Scope").Description("optional, space-separated").Value(&o.Scope),
+		huh.NewInput().Title("Audience").Description("optional").Value(&o.Audience),
+	}, nil
 }
 
 func (a *app) newProfileSwitchCmd() *cobra.Command {

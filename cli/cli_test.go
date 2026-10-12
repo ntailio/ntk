@@ -252,3 +252,43 @@ func TestProfileColors(t *testing.T) {
 		t.Errorf("a named colour: %d %s", code, errOut)
 	}
 }
+
+func TestOAuthFromPropertiesAndFlags(t *testing.T) {
+	props := "bootstrap.servers=pkc.example.com:9092\nsecurity.protocol=SASL_SSL\nsasl.mechanism=OAUTHBEARER\n" +
+		"sasl.oauthbearer.token.endpoint.url=https://idp.example.com/oauth2/token\n" +
+		"sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \\\n" +
+		"  clientId=\"ntk\" clientSecret=\"s3cret\" scope=\"kafka\" extension_logicalCluster=\"lkc-1\" extension_identityPoolId=\"pool-1\";\n"
+	var in profileInput
+	if err := fromProperties(strings.NewReader(props), &in); err != nil {
+		t.Fatal(err)
+	}
+	p, err := in.build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	o := p.Auth.OAuth
+	if p.Auth.Mechanism != "oauthbearer" || o == nil || o.TokenEndpoint != "https://idp.example.com/oauth2/token" || o.ClientID != "ntk" ||
+		o.ClientSecret != "s3cret" || o.Scope != "kafka" || o.Extensions["logicalCluster"] != "lkc-1" || o.Extensions["identityPoolId"] != "pool-1" {
+		t.Errorf("imported auth = %+v %+v", p.Auth, o)
+	}
+
+	path := filepath.Join(t.TempDir(), "profiles.json")
+	var stdout, stderr strings.Builder
+	code := Execute(t.Context(), []string{"--profile-path", path, "profile", "create", "cc", "--bootstrap", "k:9093", "--tls", "--no-test",
+		"--sasl", "oauthbearer", "--oauth-token-endpoint", "https://idp/token", "--oauth-client-id", "ntk", "--oauth-client-secret-stdin"},
+		strings.NewReader("s3cret\n"), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("create: %d %s", code, stderr.String())
+	}
+	s, err := profile.Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.File.Profiles["cc"].Auth.OAuth; got == nil || got.ClientSecret != "s3cret" || got.TokenEndpoint != "https://idp/token" {
+		t.Errorf("created oauth = %+v", got)
+	}
+	if _, _, code := runWith(t, path, "profile", "create", "both", "--bootstrap", "k:9093", "--no-test", "--sasl", "oauthbearer",
+		"--oauth-token-file", "/run/t", "--oauth-token-command", "x"); code != exitcode.Usage {
+		t.Errorf("two token sources: exit %d, want %d", code, exitcode.Usage)
+	}
+}

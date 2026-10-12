@@ -30,6 +30,28 @@ func expiry(c *x509.Certificate) string {
 	return fmt.Sprintf("expires in %dd", int(d.Hours()/24))
 }
 
+func roughly(d time.Duration) string {
+	switch {
+	case d < 0:
+		return "the past (expired)"
+	case d >= 48*time.Hour:
+		return fmt.Sprintf("%dd", int(d.Hours()/24))
+	case d >= time.Hour:
+		return fmt.Sprintf("%dh%02dm", int(d.Hours()), int(d.Minutes())%60)
+	}
+	return fmt.Sprintf("%dm", int(d.Minutes()))
+}
+
+func tokenHint(o *profile.OAuth) string {
+	switch {
+	case o.TokenFile != "":
+		return "check auth.oauth.token_file"
+	case o.TokenCommand != "":
+		return "run auth.oauth.token_command yourself to see what it prints"
+	}
+	return "check auth.oauth.token_endpoint, client_id and client_secret"
+}
+
 func (a *app) newProfileTestCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:               "test [name]",
@@ -127,6 +149,23 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 		conn.Close()
 	}
 
+	var tokenSub string
+	if p.Auth.Mechanism == "oauthbearer" && p.Auth.OAuth != nil {
+		t, err := kafka.NewTokenSource(p.Auth.OAuth, s.ResolveFile).Token(ctx, true)
+		if err != nil {
+			return fail(exitcode.Connection, "Token", err.Error(), tokenHint(p.Auth.OAuth))
+		}
+		detail := "from the " + t.Source
+		if !t.Expiry.IsZero() {
+			detail += ", expires in " + roughly(time.Until(t.Expiry))
+		}
+		if t.Subject != "" {
+			detail += ", sub " + t.Subject
+		}
+		ok("Token", "%s", detail)
+		tokenSub = t.Subject
+	}
+
 	cl, err := kafka.NewClient(p, s.ResolveFile)
 	if err != nil {
 		return fail(exitcode.Usage, "Client", err.Error(), "")
@@ -137,6 +176,8 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 	md, err := cl.Admin.BrokerMetadata(ctx)
 	if err != nil {
 		switch {
+		case errors.Is(err, kerr.SaslAuthenticationFailed) && p.Auth.Mechanism == "oauthbearer":
+			return fail(exitcode.Connection, "SASL", err.Error(), "the broker rejected the token: check its scope or audience, and auth.oauth.extensions if the cluster needs them")
 		case errors.Is(err, kerr.SaslAuthenticationFailed):
 			other := "scram-sha-256"
 			if p.Auth.Mechanism == "scram-sha-256" {
@@ -152,7 +193,12 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 		}
 		return fail(exitcode.Of(err), "Kafka", err.Error(), "")
 	}
-	if p.Auth.Mechanism != "none" {
+	switch {
+	case p.Auth.Mechanism == "oauthbearer" && tokenSub != "":
+		ok("SASL", "%s as %s", p.Auth.Mechanism, tokenSub)
+	case p.Auth.Mechanism == "oauthbearer":
+		ok("SASL", "%s", p.Auth.Mechanism)
+	case p.Auth.Mechanism != "none":
 		ok("SASL", "%s as %s", p.Auth.Mechanism, p.Auth.Username)
 	}
 	controller := md.Controller
@@ -178,6 +224,9 @@ func (a *app) diagnose(ctx context.Context, s *profile.Store, name string, p *pr
 		if pr, err := kafka.CertPrincipal(p.TLS, s.ResolveFile); err == nil {
 			principal, how = pr, "derived from the client certificate; ssl.principal.mapping.rules may change it"
 		}
+	}
+	if principal == "" && tokenSub != "" {
+		principal, how = "User:"+tokenSub, "derived from the token's sub claim; the broker's sasl.oauthbearer.sub.claim.name may differ"
 	}
 	if principal == "" {
 		principal, how = "User:ANONYMOUS", "no authentication"

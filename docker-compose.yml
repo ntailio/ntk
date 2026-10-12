@@ -23,7 +23,7 @@ x-kafka-env: &kafka-env
   KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
   # Listener names deliberately avoid "SSL://" and "SASL_", which trigger the
   # image's own (file-name based) SSL/SASL setup in /etc/kafka/docker/configure.
-  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,CLIENT:PLAINTEXT,MTLS:SSL,SASL:SASL_PLAINTEXT,SASLTLS:SASL_SSL
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,CLIENT:PLAINTEXT,MTLS:SSL,SASL:SASL_PLAINTEXT,SASLTLS:SASL_SSL,OAUTH:SASL_PLAINTEXT
   KAFKA_LOG_DIRS: /var/lib/kafka/data
   KAFKA_HEAP_OPTS: -Xms256m -Xmx768m
 
@@ -32,6 +32,9 @@ x-kafka-env: &kafka-env
   KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "false"
 
   KAFKA_SASL_ENABLED_MECHANISMS: PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
+  # OAUTH accepts unsigned tokens (Kafka's unsecured validator): for local testing only.
+  KAFKA_LISTENER_NAME_OAUTH_SASL_ENABLED_MECHANISMS: OAUTHBEARER
+  KAFKA_LISTENER_NAME_OAUTH_OAUTHBEARER_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="admin";'
   KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf
 
   KAFKA_SSL_KEYSTORE_TYPE: PEM
@@ -62,7 +65,7 @@ services:
   kafka-1:
     <<: *kafka
     hostname: kafka-1
-    ports: ["127.0.0.1:19101-19104:19101-19104"]
+    ports: ["127.0.0.1:19101-19105:19101-19105"]
     volumes:
       - ./sandbox/certs:/certs:ro
       - ./sandbox/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf:ro
@@ -70,14 +73,14 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 1
-      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19101,MTLS://:19102,SASL://:19103,SASLTLS://:19104
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19090,CLIENT://localhost:19101,MTLS://localhost:19102,SASL://localhost:19103,SASLTLS://localhost:19104
+      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19101,MTLS://:19102,SASL://:19103,SASLTLS://:19104,OAUTH://:19105
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19090,CLIENT://localhost:19101,MTLS://localhost:19102,SASL://localhost:19103,SASLTLS://localhost:19104,OAUTH://localhost:19105
       KAFKA_SSL_KEYSTORE_LOCATION: /certs/kafka-1.keystore.pem
 
   kafka-2:
     <<: *kafka
     hostname: kafka-2
-    ports: ["127.0.0.1:19201-19204:19201-19204"]
+    ports: ["127.0.0.1:19201-19205:19201-19205"]
     volumes:
       - ./sandbox/certs:/certs:ro
       - ./sandbox/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf:ro
@@ -85,14 +88,14 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 2
-      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19201,MTLS://:19202,SASL://:19203,SASLTLS://:19204
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19090,CLIENT://localhost:19201,MTLS://localhost:19202,SASL://localhost:19203,SASLTLS://localhost:19204
+      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19201,MTLS://:19202,SASL://:19203,SASLTLS://:19204,OAUTH://:19205
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19090,CLIENT://localhost:19201,MTLS://localhost:19202,SASL://localhost:19203,SASLTLS://localhost:19204,OAUTH://localhost:19205
       KAFKA_SSL_KEYSTORE_LOCATION: /certs/kafka-2.keystore.pem
 
   kafka-3:
     <<: *kafka
     hostname: kafka-3
-    ports: ["127.0.0.1:19301-19304:19301-19304"]
+    ports: ["127.0.0.1:19301-19305:19301-19305"]
     volumes:
       - ./sandbox/certs:/certs:ro
       - ./sandbox/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf:ro
@@ -100,8 +103,8 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 3
-      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19301,MTLS://:19302,SASL://:19303,SASLTLS://:19304
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19090,CLIENT://localhost:19301,MTLS://localhost:19302,SASL://localhost:19303,SASLTLS://localhost:19304
+      KAFKA_LISTENERS: INTERNAL://:19090,CONTROLLER://:19091,CLIENT://:19301,MTLS://:19302,SASL://:19303,SASLTLS://:19304,OAUTH://:19305
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19090,CLIENT://localhost:19301,MTLS://localhost:19302,SASL://localhost:19303,SASLTLS://localhost:19304,OAUTH://localhost:19305
       KAFKA_SSL_KEYSTORE_LOCATION: /certs/kafka-3.keystore.pem
 
   init:

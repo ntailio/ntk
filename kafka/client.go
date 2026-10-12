@@ -39,7 +39,7 @@ func Options(p *profile.Profile, resolve func(string) string) ([]kgo.Opt, error)
 		}
 		opts = append(opts, kgo.DialTLSConfig(cfg))
 	}
-	saslOpts, err := authOptions(p.Auth)
+	saslOpts, err := authOptions(p.Auth, resolve)
 	if err != nil {
 		return nil, err
 	}

@@ -13,7 +13,33 @@ ntk profile create ci --bootstrap kafka:9093 --tls --ca-file ca.pem \
     --sasl scram-sha-512 --username ci --password-stdin < secret.txt
 ```
 
-Supported: PLAINTEXT, TLS (with system or custom CA), mTLS with a client certificate (encrypted keys too), SASL PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512, in any combination with TLS.
+Supported: PLAINTEXT, TLS (with system or custom CA), mTLS with a client certificate (encrypted keys too), SASL PLAIN, SCRAM-SHA-256, SCRAM-SHA-512 and OAUTHBEARER, in any combination with TLS.
+
+### OAUTHBEARER
+
+For clusters that log in with OAuth tokens, like Confluent Cloud, Strimzi with Keycloak, or Azure Event Hubs. The token comes from one of three places:
+
+```sh
+# client credentials: ntk fetches a token from your identity provider
+ntk profile create cloud --bootstrap pkc-123.eu-west-1.aws.confluent.cloud:9092 --tls --sasl oauthbearer \
+    --oauth-token-endpoint https://idp.example.com/oauth2/token --oauth-client-id ntk --oauth-client-secret-stdin < secret.txt
+
+# a file another tool keeps up to date, such as a Kubernetes service account token
+ntk profile create k8s --bootstrap kafka:9093 --tls --sasl oauthbearer --oauth-token-file /var/run/secrets/kafka/token
+
+# a command that prints a token
+ntk profile create sso --bootstrap kafka:9093 --tls --sasl oauthbearer --oauth-token-command 'my-sso token --audience kafka'
+```
+
+`--oauth-scope` and `--oauth-audience` add a scope or audience to the client-credentials request. Tokens from a token endpoint are cached in your user cache directory (`~/.cache/ntk/tokens` on Linux) and reused until shortly before they expire, so ntk doesn't log in to your identity provider on every command. A token file is read again each time, and a command runs once per ntk process.
+
+Some services need SASL extensions too. Confluent Cloud, for example, needs the cluster and identity pool:
+
+```sh
+ntk profile edit cloud --set auth.oauth.extensions.logicalCluster=lkc-123 --set auth.oauth.extensions.identityPoolId=pool-456
+```
+
+`ntk profile test` shows where the token came from, when it expires and who it's for, and `whoami` shows the principal as `User:` plus the token's `sub` claim.
 
 The wizard tests the connection before saving. You can rerun that test any time, step by step:
 

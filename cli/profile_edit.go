@@ -27,6 +27,9 @@ func inputFromProfile(name string, p *profile.Profile) profileInput {
 		readOnly: p.ReadOnly, color: p.Color, deletion: p.DeletionPrevention,
 		mechanism: p.Auth.Mechanism, username: p.Auth.Username, password: p.Auth.Password, security: secPlaintext,
 	}
+	if p.Auth.OAuth != nil {
+		in.oauth = *p.Auth.OAuth
+	}
 	if in.mechanism == "none" || in.mechanism == "" {
 		in.mechanism = "scram-sha-512"
 	}
@@ -290,19 +293,31 @@ func fromProperties(r io.Reader, in *profileInput) error {
 	if strings.HasPrefix(proto, "SASL") {
 		switch m := strings.ToUpper(props["sasl.mechanism"]); m {
 		case "", "GSSAPI":
-			return fmt.Errorf("sasl.mechanism %q is not supported yet (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512)", m)
-		case "PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512":
+			return fmt.Errorf("sasl.mechanism %q is not supported yet (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, OAUTHBEARER)", m)
+		case "PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512", "OAUTHBEARER":
 			in.mechanism = strings.ToLower(m)
+			in.oauth.TokenEndpoint = props["sasl.oauthbearer.token.endpoint.url"]
 		default:
 			return fmt.Errorf("sasl.mechanism %q is not supported yet", m)
 		}
 		for _, kv := range jaasKV.FindAllStringSubmatch(props["sasl.jaas.config"], -1) {
 			v, _ := strconv.Unquote(`"` + kv[2] + `"`)
-			switch kv[1] {
-			case "username":
+			switch k := kv[1]; {
+			case k == "username":
 				in.username = v
-			case "password":
+			case k == "password":
 				in.password = v
+			case k == "clientId":
+				in.oauth.ClientID = v
+			case k == "clientSecret":
+				in.oauth.ClientSecret = v
+			case k == "scope":
+				in.oauth.Scope = v
+			case strings.HasPrefix(k, "extension_"):
+				if in.oauth.Extensions == nil {
+					in.oauth.Extensions = map[string]string{}
+				}
+				in.oauth.Extensions[strings.TrimPrefix(k, "extension_")] = v
 			}
 		}
 	}

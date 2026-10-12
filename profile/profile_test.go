@@ -93,3 +93,32 @@ func TestDurationJSON(t *testing.T) {
 		t.Errorf("marshal = %s", b)
 	}
 }
+
+func TestOAuthValidation(t *testing.T) {
+	base := func(o *OAuth) *Profile {
+		return &Profile{BootstrapServers: []string{"k:9093"}, Auth: Auth{Mechanism: "oauthbearer", OAuth: o}}
+	}
+	for name, o := range map[string]*OAuth{
+		"client credentials": {TokenEndpoint: "https://idp/token", ClientID: "ntk", ClientSecret: "s"},
+		"token file":         {TokenFile: "/run/token"},
+		"token command":      {TokenCommand: "get-token"},
+	} {
+		if err := base(o).Validate(); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	for name, o := range map[string]*OAuth{
+		"nothing":        nil,
+		"empty":          {},
+		"two sources":    {TokenFile: "/run/token", TokenCommand: "get-token"},
+		"missing secret": {TokenEndpoint: "https://idp/token", ClientID: "ntk"},
+	} {
+		if err := base(o).Validate(); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	p := base(&OAuth{TokenEndpoint: "https://idp/token", ClientID: "ntk", ClientSecret: "s3cret"})
+	if r := p.Redacted(); r.Auth.OAuth.ClientSecret == "s3cret" || p.Auth.OAuth.ClientSecret != "s3cret" {
+		t.Errorf("Redacted should mask a copy: %q / %q", r.Auth.OAuth.ClientSecret, p.Auth.OAuth.ClientSecret)
+	}
+}

@@ -17,25 +17,26 @@ import (
 	"github.com/ntailio/ntk/profile"
 )
 
-var saslMechanisms = map[string]func(profile.Auth) (sasl.Mechanism, error){
-	"plain": func(a profile.Auth) (sasl.Mechanism, error) {
+var saslMechanisms = map[string]func(profile.Auth, func(string) string) (sasl.Mechanism, error){
+	"plain": func(a profile.Auth, _ func(string) string) (sasl.Mechanism, error) {
 		if err := needUserPass(a); err != nil {
 			return nil, err
 		}
 		return plain.Auth{User: a.Username, Pass: a.Password}.AsMechanism(), nil
 	},
-	"scram-sha-256": func(a profile.Auth) (sasl.Mechanism, error) {
+	"scram-sha-256": func(a profile.Auth, _ func(string) string) (sasl.Mechanism, error) {
 		if err := needUserPass(a); err != nil {
 			return nil, err
 		}
 		return scram.Auth{User: a.Username, Pass: a.Password}.AsSha256Mechanism(), nil
 	},
-	"scram-sha-512": func(a profile.Auth) (sasl.Mechanism, error) {
+	"scram-sha-512": func(a profile.Auth, _ func(string) string) (sasl.Mechanism, error) {
 		if err := needUserPass(a); err != nil {
 			return nil, err
 		}
 		return scram.Auth{User: a.Username, Pass: a.Password}.AsSha512Mechanism(), nil
 	},
+	"oauthbearer": oauthMechanism,
 }
 
 func Mechanisms() []string {
@@ -47,7 +48,7 @@ func Mechanisms() []string {
 	return names
 }
 
-func authOptions(a profile.Auth) ([]kgo.Opt, error) {
+func authOptions(a profile.Auth, resolve func(string) string) ([]kgo.Opt, error) {
 	if a.Mechanism == "none" {
 		return nil, nil
 	}
@@ -55,7 +56,7 @@ func authOptions(a profile.Auth) ([]kgo.Opt, error) {
 	if !ok {
 		return nil, fmt.Errorf("auth.mechanism %q is not supported (use one of: %s)", a.Mechanism, strings.Join(Mechanisms(), ", "))
 	}
-	m, err := build(a)
+	m, err := build(a, resolve)
 	if err != nil {
 		return nil, fmt.Errorf("auth (%s): %w", a.Mechanism, err)
 	}

@@ -424,6 +424,11 @@ func (a *app) newWhoamiCmd() *cobra.Command {
 					if p, err := kafka.CertPrincipal(s.prof.TLS, s.resolve); err == nil {
 						principal, how = p, "client certificate subject; the broker's ssl.principal.mapping.rules may change it"
 					}
+				case s.prof.Auth.Mechanism == "oauthbearer" && s.prof.Auth.OAuth != nil:
+					principal, how = "User:<token subject>", "the broker's sasl.oauthbearer.sub.claim.name decides"
+					if t, err := kafka.NewTokenSource(s.prof.Auth.OAuth, s.resolve).Token(cmd.Context(), false); err == nil && t.Subject != "" {
+						principal, how = "User:"+t.Subject, "derived from the token's sub claim; the broker's sasl.oauthbearer.sub.claim.name may differ"
+					}
 				default:
 					principal, how = "User:ANONYMOUS", "no authentication"
 				}

@@ -67,6 +67,31 @@ type Auth struct {
 	Mechanism string `json:"mechanism"`
 	Username  string `json:"username,omitempty"`
 	Password  string `json:"password,omitempty"`
+	OAuth     *OAuth `json:"oauth,omitempty"`
+}
+
+// OAuth is where an OAUTHBEARER token comes from: client credentials
+// (TokenEndpoint, ClientID, ClientSecret), a file, or a command.
+type OAuth struct {
+	TokenEndpoint string            `json:"token_endpoint,omitempty"`
+	ClientID      string            `json:"client_id,omitempty"`
+	ClientSecret  string            `json:"client_secret,omitempty"`
+	Scope         string            `json:"scope,omitempty"`
+	Audience      string            `json:"audience,omitempty"`
+	TokenFile     string            `json:"token_file,omitempty"`
+	TokenCommand  string            `json:"token_command,omitempty"`
+	Extensions    map[string]string `json:"extensions,omitempty"`
+}
+
+// Sources counts how many token sources are set; exactly one is valid.
+func (o *OAuth) Sources() int {
+	n := 0
+	for _, set := range []bool{o.TokenEndpoint != "" || o.ClientID != "" || o.ClientSecret != "", o.TokenFile != "", o.TokenCommand != ""} {
+		if set {
+			n++
+		}
+	}
+	return n
 }
 
 type Timeouts struct {
@@ -113,6 +138,11 @@ func (p *Profile) Redacted() *Profile {
 	c := *p
 	if c.Auth.Password != "" {
 		c.Auth.Password = mask
+	}
+	if c.Auth.OAuth != nil && c.Auth.OAuth.ClientSecret != "" {
+		o := *c.Auth.OAuth
+		o.ClientSecret = mask
+		c.Auth.OAuth = &o
 	}
 	if c.TLS != nil {
 		t := *c.TLS
@@ -172,6 +202,17 @@ func (p *Profile) Validate() error {
 	}
 	if p.Auth.Mechanism == "" {
 		errs = append(errs, errors.New(`auth.mechanism: required (use "none" for no SASL)`))
+	}
+	if p.Auth.Mechanism == "oauthbearer" {
+		o := p.Auth.OAuth
+		switch {
+		case o == nil || o.Sources() == 0:
+			errs = append(errs, errors.New("auth.oauth: set token_endpoint with client_id and client_secret, or token_file, or token_command"))
+		case o.Sources() > 1:
+			errs = append(errs, errors.New("auth.oauth: use one token source: client credentials, token_file, or token_command"))
+		case o.TokenFile == "" && o.TokenCommand == "" && (o.TokenEndpoint == "" || o.ClientID == "" || o.ClientSecret == ""):
+			errs = append(errs, errors.New("auth.oauth: client credentials need token_endpoint, client_id and client_secret"))
+		}
 	}
 	if t := p.TLS; t != nil {
 		if t.CAFile != "" && t.CAPEM != "" {
